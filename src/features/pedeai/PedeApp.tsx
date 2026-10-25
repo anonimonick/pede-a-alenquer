@@ -55,6 +55,7 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
     const p = PRODUCTS.find((o) => o.id === id);
     if (!p) return;
     const restaurant = RESTAURANTS[p.restaurantId - 1];
+    if (!restaurant) return;
     const success = add({key: `${id}-offer`, id, restaurantId:p.restaurantId, title:p.title, price:p.price, base:p.price, extras:[], notes:'', restaurant:restaurant.name, quantity:1});
     if(success) showToast(`${p.title} adicionado ao carrinho!`);
   };
@@ -87,7 +88,7 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
             <Button className="search-button" aria-label="Pesquisar"><SearchIcon /></Button>
           </div>
           <div className="header-actions">
-            <Button className="btn-account" onClick={() => showToast("Área de login demonstrativa.")}><UserIcon /><span>Entrar</span></Button>
+            <Button variant="ghost" className="btn-account" onClick={() => showToast("Área de login demonstrativa.")}><UserIcon /><span>Entrar</span></Button>
             <Button className="btn-cart" aria-label="Abrir carrinho de compras" onClick={() => setOpen(true)}>
               <BagIcon /><span className="cart-count">{count}</span>
             </Button>
@@ -150,7 +151,7 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
                   <p>Nenhum estabelecimento encontrado para "{search.trim() || cat}".</p>
                 </div>
               ) : filtered.map((r) => (
-                <Link key={r.id} className="restaurant-card" to="/restaurante/$slug" params={{slug:SLUGS[r.id-1]}}>
+                <Link key={r.id} className="restaurant-card" to="/restaurante/$slug" params={{slug:SLUGS[r.id-1] ?? SLUGS[0]}}>
                   <div className="restaurant-image-wrapper">
                     <img src={r.img} alt={`${r.name} - Imagem demonstrativa`} className="restaurant-image" loading="lazy" />
                     <span className="demo-tag">Demonstrativo</span>
@@ -270,7 +271,7 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
       <aside className={`cart-drawer ${open ? "active" : ""}`} aria-label="Carrinho de compras">
         <div className="cart-drawer-header">
           <h3 className="cart-drawer-title">Meu Carrinho</h3>
-          <Button className="cart-drawer-close" onClick={() => setOpen(false)} aria-label="Fechar carrinho">×</Button>
+          <Button variant="ghost" className="cart-drawer-close" onClick={() => setOpen(false)} aria-label="Fechar carrinho">×</Button>
         </div>
         <div className="cart-drawer-body">
           {cart.length === 0 ? (

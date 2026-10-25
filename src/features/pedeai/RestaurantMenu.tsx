@@ -15,6 +15,7 @@ export function RestaurantMenu({restaurantId,notify}:{restaurantId:number;notify
  const [category,setCategory]=useState('Todos');
  const [product,setProduct]=useState<Product|null>(null);
  const categories=['Todos','Mais pedidos',...new Set(products.map(p=>p.category))];
+ if (!restaurant || !details) return null;
  const term=search.trim().toLocaleLowerCase('pt-BR');
  const filtered=products.filter(p=>(category==='Todos'||(category==='Mais pedidos'?p.popular:p.category===category))&&`${p.title} ${p.desc} ${p.category}`.toLocaleLowerCase('pt-BR').includes(term));
  return <main className="restaurant-page">
@@ -37,14 +38,14 @@ export function RestaurantMenu({restaurantId,notify}:{restaurantId:number;notify
 }
 function ProductModal({product,close,notify}:{product:Product;close:()=>void;notify:(text:string)=>void}) {
  const {add}=useCart();
- const [selected,setSelected]=useState<Record<string,string[]>>(()=>Object.fromEntries(product.groups.filter(g=>g.type==='single').map(g=>[g.name,[g.options[0].name]])));
+ const [selected,setSelected]=useState<Record<string,string[]>>(()=>Object.fromEntries(product.groups.filter(g=>g.type==='single').map(g=>[g.name,[g.options[0]?.name ?? ""]])));
  const [quantity,setQuantity]=useState(1);
  const [notes,setNotes]=useState('');
  const extras:Option[]=product.groups.flatMap(g=>g.options.filter(o=>selected[g.name]?.includes(o.name)));
  const total=productTotal(product.price,extras,quantity);
- const submit=()=>{const restaurant=RESTAURANTS[product.restaurantId-1];const normalized=notes.trim();const key=JSON.stringify([product.id,extras.map(o=>o.name).sort(),normalized]);const success=add({key,id:product.id,restaurantId:product.restaurantId,restaurant:restaurant.name,title:product.title,base:product.price,price:productTotal(product.price,extras,1),extras,notes:normalized,quantity});close();if(success)notify(`${product.title} adicionado ao carrinho!`);};
+ const submit=()=>{const restaurant=RESTAURANTS[product.restaurantId-1];if (!restaurant) return;const normalized=notes.trim();const key=JSON.stringify([product.id,extras.map(o=>o.name).sort(),normalized]);const success=add({key,id:product.id,restaurantId:product.restaurantId,restaurant:restaurant.name,title:product.title,base:product.price,price:productTotal(product.price,extras,1),extras,notes:normalized,quantity});close();if(success)notify(`${product.title} adicionado ao carrinho!`);};
  return <DialogContent className="pa-modal product-modal"><img className="product-modal-photo" src={product.img} alt={product.title}/><div className="product-modal-body"><span className="menu-demo">Produto demonstrativo</span><DialogTitle>{product.title}</DialogTitle><DialogDescription>{product.desc}</DialogDescription><strong className="base-price">{brl(product.price)}</strong>
-  {product.groups.map(g=><fieldset className="option-group" key={g.name}><legend>{g.name}<span>{g.type==='single'?'Escolha uma opção':'Opcional'}</span></legend>{g.options.map(o=><label className="option-row" key={o.name}><input type={g.type==='single'?'radio':'checkbox'} name={g.name} checked={selected[g.name]?.includes(o.name)??false} onChange={()=>setSelected(prev=>({...prev,[g.name]:g.type==='single'?[o.name]:prev[g.name]?.includes(o.name)?prev[g.name].filter(n=>n!==o.name):[...(prev[g.name]??[]),o.name]}))}/><span>{o.name}</span><strong>{o.price===0?'Sem custo':`+ ${brl(o.price)}`}</strong></label>)}</fieldset>)}
+  {product.groups.map(g=><fieldset className="option-group" key={g.name}><legend>{g.name}<span>{g.type==='single'?'Escolha uma opção':'Opcional'}</span></legend>{g.options.map(o=><label className="option-row" key={o.name}><input type={g.type==='single'?'radio':'checkbox'} name={g.name} checked={selected[g.name]?.includes(o.name)??false} onChange={()=>setSelected(prev=>({...prev,[g.name]:g.type==='single'?[o.name]:prev[g.name]?.includes(o.name)?(prev[g.name] ?? []).filter(n=>n!==o.name):[...(prev[g.name]??[]),o.name]}))}/><span>{o.name}</span><strong>{o.price===0?'Sem custo':`+ ${brl(o.price)}`}</strong></label>)}</fieldset>)}
   <label className="notes-label">Observações<textarea placeholder="Ex.: Sem cebola, ponto da carne" maxLength={300} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
   </div><div className="product-modal-footer"><div className="quantity-control"><Button variant="ghost" size="icon" disabled={quantity===1} aria-label="Diminuir quantidade" onClick={()=>setQuantity(q=>Math.max(1,q-1))}><Minus/></Button><strong>{quantity}</strong><Button variant="ghost" size="icon" aria-label="Aumentar quantidade" onClick={()=>setQuantity(q=>q+1)}><Plus/></Button></div><Button className="pa-primary product-submit" onClick={submit}>Adicionar ao Carrinho - {brl(total)}</Button></div></DialogContent>;
 }
