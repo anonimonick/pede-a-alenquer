@@ -35,16 +35,16 @@ export function validateCheckout(draft:Draft,total:number) {
  const errors:Record<string,string>={};
  const parsed=draftSchema.safeParse(draft);
  if(!parsed.success)for(const issue of parsed.error.issues)errors[issue.path.at(-1)?.toString()??'form']=issue.message;
- if(draft.address.name.trim().length<2)errors.name='Informe o nome do destinatário';
+ if(draft.address.name.trim().length<2)errors['name']='Informe o nome do destinatário';
  const digits=draft.address.phone.replace(/\D/g,'');
- if(!/^[\d\s()+-]+$/.test(draft.address.phone)||digits.length<10||digits.length>13)errors.phone='Informe um telefone com DDD';
+ if(!/^[\d\s()+-]+$/.test(draft.address.phone)||digits.length<10||digits.length>13)errors['phone']='Informe um telefone com DDD';
  if(draft.mode==='delivery'){
   for(const [field,label] of [['street','a rua, estrada ou ramal'],['number','o número ou identificação do imóvel'],['district','o bairro ou comunidade'],['reference','um ponto de referência']] as const)if(!draft.address[field].trim())errors[field]=`Informe ${label}`;
-  if(draft.address.cep&&!/^\d{5}-?\d{3}$/.test(draft.address.cep))errors.cep='CEP deve ter 8 dígitos';
+  if(draft.address.cep&&!/^\d{5}-?\d{3}$/.test(draft.address.cep))errors['cep']='CEP deve ter 8 dígitos';
  }
  const change=parseChange(draft.change);
- if(draft.payment==='Dinheiro'&&change!==null&&(!Number.isFinite(change)||change<total))errors.change='O valor para troco deve ser maior ou igual ao total do pedido';
- if(!draft.reviewed)errors.reviewed='Confirme que revisou os dados do pedido';
+ if(draft.payment==='Dinheiro'&&change!==null&&(!Number.isFinite(change)||change<total))errors['change']='O valor para troco deve ser maior ou igual ao total do pedido';
+ if(!draft.reviewed)errors['reviewed']='Confirme que revisou os dados do pedido';
  return errors;
 }
 export const itemSchema=z.object({key:text(1500),id:z.number().int(),restaurantId:z.number().int().min(1).max(6),restaurant:text(100),title:text(150),price:z.number().finite().nonnegative(),base:z.number().finite().nonnegative(),extras:z.array(z.object({name:text(100),price:z.number().finite().nonnegative()})).max(30),notes:text(300),quantity:z.number().int().min(1).max(9999)});

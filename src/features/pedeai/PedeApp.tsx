@@ -5,7 +5,7 @@ import { RESTAURANTS, OFFERS, SLUGS, brl, PRODUCTS } from "./data";
 import { useCart } from "./cart-context";
 import { RestaurantMenu } from "./RestaurantMenu";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import "../../pedeai.css";
 import "./stage2.css";
 import { calculateOrder, money } from "./checkout-rules";
@@ -39,6 +39,22 @@ export function PedeApp({ restaurantId, children }: { restaurantId?: number; chi
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mobileRef = useRef<HTMLInputElement>(null);
 
+  useEffect(()=>{
+    if(!open)return;
+    const previous=document.activeElement;
+    const drawer=document.getElementById('pa-cart-drawer');
+    drawer?.querySelector<HTMLButtonElement>('button')?.focus();
+    const keydown=(event:KeyboardEvent)=>{
+      if(event.key==='Escape'){setOpen(false);return;}
+      if(event.key!=='Tab'||!drawer)return;
+      const controls=Array.from(drawer.querySelectorAll<HTMLElement>('button, a[href]')).filter(e=>!e.hasAttribute('disabled'));
+      const first=controls[0],last=controls.at(-1);
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+      if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+    };
+    document.addEventListener('keydown',keydown);
+    return ()=>{document.removeEventListener('keydown',keydown);if(previous instanceof HTMLElement)previous.focus();};
+  },[open]);
   const showToast = (text: string) => {
     setToast({ show: true, text });
     clearTimeout(timer.current);
@@ -262,7 +278,7 @@ export function PedeApp({ restaurantId, children }: { restaurantId?: number; chi
       </nav>
 
       <div className={`cart-drawer-overlay ${open ? "active" : ""}`} onClick={() => setOpen(false)} />
-      <aside className={`cart-drawer ${open ? "active" : ""}`} aria-label="Carrinho de compras">
+      <aside id="pa-cart-drawer" inert={!open} role="dialog" aria-modal={open} className={`cart-drawer ${open ? "active" : ""}`} aria-label="Carrinho de compras">
         <div className="cart-drawer-header">
           <h3 className="cart-drawer-title">Meu Carrinho</h3>
           <Button variant="ghost" className="cart-drawer-close" onClick={() => setOpen(false)} aria-label="Fechar carrinho">×</Button>
@@ -281,10 +297,10 @@ export function PedeApp({ restaurantId, children }: { restaurantId?: number; chi
                 {i.extras.length > 0 && <p className="cart-detail">{i.extras.map(o=>o.name).join(', ')}</p>}
                 {i.notes && <p className="cart-detail">Obs.: {i.notes}</p>}
                 <div className="quantity-control">
-                  <Button variant="ghost" size="icon" aria-label={`Diminuir ${i.title}`} onClick={()=>update(i.key,i.quantity-1)}><Minus /></Button>
+                  <Button variant="ghost" size="icon" aria-label={`Diminuir ${i.title}`} onClick={()=>{update(i.key,i.quantity-1);if(i.quantity===1)showToast("Item removido do carrinho.");}}><Minus /></Button>
                   <span>{i.quantity}</span>
                   <Button variant="ghost" size="icon" aria-label={`Aumentar ${i.title}`} onClick={()=>update(i.key,i.quantity+1)}><Plus /></Button>
-                  <Button variant="ghost" size="icon" aria-label={`Remover ${i.title}`} onClick={()=>update(i.key,0)}><Trash2 /></Button>
+                  <Button variant="ghost" size="icon" aria-label={`Remover ${i.title}`} onClick={()=>{update(i.key,0);showToast("Item removido do carrinho.");}}><Trash2 /></Button>
                 </div>
               </div>
               <div className="cart-item-price">{brl(i.price * i.quantity)}</div>

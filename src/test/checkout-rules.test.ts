@@ -17,15 +17,15 @@ describe('Stage 3 pricing rules',()=>{
 const pickup={...emptyDraft,mode:'pickup' as const,address:{...emptyDraft.address,name:'Maria',phone:'93999999999'},reviewed:true};
 describe('Checkout validation',()=>{
  it('pickup requires name and phone but not address',()=>expect(validateCheckout(pickup,4380)).toEqual({}));
- it('requires a customer name',()=>expect(validateCheckout({...pickup,address:{...pickup.address,name:''}},4380).name).toBeDefined());
- it('requires phone with area code',()=>expect(validateCheckout({...pickup,address:{...pickup.address,phone:'123'}},4380).phone).toBeDefined());
+ it('requires a customer name',()=>expect(validateCheckout({...pickup,address:{...pickup.address,name:''}},4380)['name']).toBeDefined());
+ it('requires phone with area code',()=>expect(validateCheckout({...pickup,address:{...pickup.address,phone:'123'}},4380)['phone']).toBeDefined());
  it('delivery requires street, identification, community and reference',()=>{const errors=validateCheckout({...pickup,mode:'delivery'},4380);for(const key of ['street','number','district','reference'])expect(errors[key]).toBeDefined();});
- it('review checkbox is mandatory',()=>expect(validateCheckout({...pickup,reviewed:false},4380).reviewed).toBeDefined());
- it('cash change cannot be smaller than total',()=>expect(validateCheckout({...pickup,payment:'Dinheiro',change:'43,79'},4380).change).toBeDefined());
- it('cash change can equal total',()=>expect(validateCheckout({...pickup,payment:'Dinheiro',change:'43,80'},4380).change).toBeUndefined());
- it('cash change remains optional',()=>expect(validateCheckout({...pickup,payment:'Dinheiro',change:''},4380).change).toBeUndefined());
+ it('review checkbox is mandatory',()=>expect(validateCheckout({...pickup,reviewed:false},4380)['reviewed']).toBeDefined());
+ it('cash change cannot be smaller than total',()=>expect(validateCheckout({...pickup,payment:'Dinheiro',change:'43,79'},4380)['change']).toBeDefined());
+ it('cash change can equal total',()=>expect(validateCheckout({...pickup,payment:'Dinheiro',change:'43,80'},4380)['change']).toBeUndefined());
+ it('cash change remains optional',()=>expect(validateCheckout({...pickup,payment:'Dinheiro',change:''},4380)['change']).toBeUndefined());
  it('rejects malformed cash input',()=>expect(Number.isNaN(parseChange('1e9'))).toBe(true));
- it('limits address inputs',()=>expect(validateCheckout({...pickup,address:{...pickup.address,name:'a'.repeat(101)}},4380).name).toBeDefined());
+ it('limits address inputs',()=>expect(validateCheckout({...pickup,address:{...pickup.address,name:'a'.repeat(101)}},4380)['name']).toBeDefined());
 });
 describe('Safe local persistence',()=>{
  beforeEach(()=>localStorage.clear());
