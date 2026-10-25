@@ -16,7 +16,7 @@ const fields:{key:keyof Address;label:string;optional?:boolean}[]=[{key:'name',l
 export function CheckoutPage(){
  const {cart,coupon,setCoupon,draft,setDraft,recordOrder,ready,storageWarning}=useCart();
  const account=useAccount();const user=account.currentUser;
- useEffect(()=>{if(!ready||!account.ready||!user)return;setDraft(d=>({...d,reviewed:false,address:{...d.address,name:user.name,phone:user.phone}}));},[user?.id,ready,account.ready,setDraft]);
+ useEffect(()=>{if(!ready||!account.ready||!user)return;setDraft(d=>({...d,reviewed:false,address:!d.address.street&&user.addresses.find(a=>a.isDefault)?{...(user.addresses.find(a=>a.isDefault)?.address??d.address)}:{...d.address,name:user.name,phone:user.phone}}));},[user?.id,ready,account.ready,setDraft]);
  const navigate=useNavigate();const [errors,setErrors]=useState<Record<string,string>>({});const [code,setCode]=useState('');const [message,setMessage]=useState('');
  const totals=calculateOrder(cart,draft.mode,coupon);
  const edit=(patch:Partial<typeof draft>)=>{setErrors({});setDraft(d=>({...d,...patch,reviewed:false}));};
