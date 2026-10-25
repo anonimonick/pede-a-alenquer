@@ -1,0 +1,12 @@
+import { act,renderHook,cleanup } from '@testing-library/react';
+import { describe,it,expect,beforeEach } from 'vitest';
+import { webcrypto } from 'node:crypto';
+import { AccountProvider,useAccount } from '@/features/pedeai/account-context';
+import { createAccount,type Registration } from '@/features/pedeai/account-rules';
+const input:Registration={name:'Maria Silva',email:'maria@example.com',phone:'93999998888',password:'abc123',confirmation:'abc123',accepted:true};
+beforeEach(()=>{cleanup();localStorage.clear();sessionStorage.clear();Object.defineProperty(globalThis,'crypto',{value:webcrypto,configurable:true});});
+describe('Local account isolation and sessions',()=>{
+ it('keeps favorites and order ownership isolated between accounts',async()=>{const a=await createAccount(input);const b=await createAccount({...input,email:'other@example.com'});localStorage.setItem('pa-accounts-v4',JSON.stringify([a,b]));const {result}=renderHook(()=>useAccount(),{wrapper:AccountProvider});await act(async()=>{await result.current.login(a.email,'abc123',true);});act(()=>{result.current.toggleFavorite(1);result.current.attachOrders(['PA-TEST']);});await act(async()=>{await result.current.login(b.email,'abc123',false);});act(()=>result.current.attachOrders(['PA-TEST']));expect(result.current.currentUser?.favorites).toEqual([]);expect(result.current.currentUser?.orderCodes).toEqual([]);expect(localStorage.getItem('pa-session-v4')).toBeNull();expect(JSON.parse(sessionStorage.getItem('pa-session-v4')??'null')).toBe(b.id);});
+ it('restores remembered sessions and clears both session stores on logout',async()=>{const a=await createAccount(input);localStorage.setItem('pa-accounts-v4',JSON.stringify([a]));localStorage.setItem('pa-session-v4',JSON.stringify(a.id));const {result}=renderHook(()=>useAccount(),{wrapper:AccountProvider});expect(result.current.currentUser?.email).toBe(a.email);act(()=>result.current.logout());expect(result.current.currentUser).toBeNull();expect(localStorage.getItem('pa-session-v4')).toBeNull();expect(sessionStorage.getItem('pa-session-v4')).toBeNull();});
+ it('recovers safely from corrupt accounts and sessions',()=>{localStorage.setItem('pa-accounts-v4','broken');localStorage.setItem('pa-session-v4','broken');const {result}=renderHook(()=>useAccount(),{wrapper:AccountProvider});expect(result.current.ready).toBe(true);expect(result.current.currentUser).toBeNull();});
+});

@@ -9,6 +9,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import "../../pedeai.css";
 import "./stage2.css";
 import { calculateOrder, money } from "./checkout-rules";
+import { AccountHeader, FavoriteButton } from './AccountControls';
+import { useAccount } from './account-context';
 
 const S = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
@@ -32,6 +34,7 @@ const PinIcon = ({ size = 18 }: { size?: number }) => <svg {...S} width={size} h
 
 export function PedeApp({ restaurantId, children }: { restaurantId?: number; children?: ReactNode }) {
   const { cart, add, pending, confirm, cancel, update } = useCart();
+  const { currentUser } = useAccount();
   const [cat, setCat] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -98,7 +101,7 @@ export function PedeApp({ restaurantId, children }: { restaurantId?: number; chi
             <Button className="search-button" aria-label="Pesquisar"><SearchIcon /></Button>
           </div>
           <div className="header-actions">
-            <Button variant="ghost" className="btn-account" onClick={() => showToast("Área de login demonstrativa.")}><UserIcon /><span>Entrar</span></Button>
+            <AccountHeader/>
             <Button className="btn-cart" aria-label="Abrir carrinho de compras" onClick={() => setOpen(true)}>
               <BagIcon /><span className="cart-count">{count}</span>
             </Button>
@@ -161,7 +164,7 @@ export function PedeApp({ restaurantId, children }: { restaurantId?: number; chi
                   <p>Nenhum estabelecimento encontrado para "{search.trim() || cat}".</p>
                 </div>
               ) : filtered.map((r) => (
-                <Link key={r.id} className="restaurant-card" to="/restaurante/$slug" params={{slug:SLUGS[r.id-1] ?? SLUGS[0]}}>
+                <div key={r.id} className="restaurant-card-shell"><FavoriteButton restaurantId={r.id}/><Link className="restaurant-card" to="/restaurante/$slug" params={{slug:SLUGS[r.id-1] ?? SLUGS[0]}}>
                   <div className="restaurant-image-wrapper">
                     <img src={r.img} alt={`${r.name} - Imagem demonstrativa`} className="restaurant-image" loading="lazy" />
                     <span className="demo-tag">Demonstrativo</span>
@@ -184,7 +187,7 @@ export function PedeApp({ restaurantId, children }: { restaurantId?: number; chi
                       </div>
                     </div>
                   </div>
-                </Link>
+                </Link></div>
               ))}
             </div>
           </div>
@@ -273,8 +276,8 @@ export function PedeApp({ restaurantId, children }: { restaurantId?: number; chi
         <Button className="nav-item" onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); mobileRef.current?.focus(); }}>
           <SearchIcon /><span>Buscar</span>
         </Button>
-        <Button asChild className="nav-item"><Link to="/carrinho"><BagIcon /><span>Pedidos</span></Link></Button>
-        <Button className="nav-item" onClick={() => showToast("Perfil de usuário demonstrativo.")}><UserIcon /><span>Perfil</span></Button>
+        <Button asChild className="nav-item"><Link to={currentUser?'/minha-conta':'/carrinho'} search={currentUser?{tab:'pedidos'}:{}}><BagIcon /><span>Pedidos</span></Link></Button>
+        <Button asChild className="nav-item"><Link to={currentUser?'/minha-conta':'/entrar'} search={currentUser?{tab:'perfil'}:{returnTo:'/minha-conta'}}><UserIcon /><span>Perfil</span></Link></Button>
       </nav>
 
       <div className={`cart-drawer-overlay ${open ? "active" : ""}`} onClick={() => setOpen(false)} />

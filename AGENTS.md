@@ -14,3 +14,5 @@
 - Keep restaurant/menu fixtures and pure cart pricing rules in browser-safe modules so all ordering entry points share the same constraints and tests.
 - Use dedicated TanStack cart, checkout and confirmation routes, not a standalone HTML page switcher, to preserve the existing framework and direct navigation.
 - Compute order totals through one integer-cent calculator and persist immutable validated confirmation snapshots so completed orders never depend on a later edited cart.
+- Local demo accounts use a root account provider and Web Crypto PBKDF2 salted verifiers only in browser event handlers; remembered sessions use localStorage and transient sessions use sessionStorage, never production authentication.
+- Scope addresses and favorites to the local account, and associate completed order codes with its account without rewriting Stage 3 order snapshots; never attach another account's order history.

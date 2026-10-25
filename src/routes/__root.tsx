@@ -11,6 +11,8 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import { CartProvider } from "@/features/pedeai/cart-context";
+import { AccountProvider } from "@/features/pedeai/account-context";
+import { AccountOrderBridge } from "@/features/pedeai/AccountOrderBridge";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -124,7 +126,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <CartProvider><Outlet /></CartProvider>
+      <AccountProvider><CartProvider><AccountOrderBridge/><Outlet /></CartProvider></AccountProvider>
     </QueryClientProvider>
   );
 }
