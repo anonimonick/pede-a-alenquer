@@ -55,9 +55,14 @@ export const cartSchema=z.array(itemSchema).max(100).superRefine((items,ctx)=>{
  }
  if(new Set(items.map(i=>i.key)).size!==items.length)ctx.addIssue({code:'custom',message:'Itens duplicados'});
 });
-export const orderSchema=z.object({code:z.string().regex(/^PA-[A-Z0-9]+$/),createdAt:z.string(),status:z.literal('Em preparação'),items:cartSchema,draft:draftSchema,coupon:couponSchema.nullable(),totals:z.object({subtotal:z.number().int().nonnegative(),delivery:z.number().int().nonnegative(),discount:z.number().int().nonnegative(),total:z.number().int().nonnegative()})});
+export const orderSchema=z.object({code:z.string().regex(/^PA-[A-Z0-9]+$/),createdAt:z.string().datetime(),status:z.literal('Em preparação'),items:cartSchema,draft:draftSchema,coupon:couponSchema.nullable(),totals:z.object({subtotal:z.number().int().nonnegative(),delivery:z.number().int().nonnegative(),discount:z.number().int().nonnegative(),total:z.number().int().nonnegative()})});
 export type DemoOrder=z.infer<typeof orderSchema>;
-export const ordersSchema=z.array(orderSchema).max(30);
+export const ordersSchema=z.array(orderSchema).max(30).superRefine((orders,ctx)=>{
+ for(const order of orders){
+  const expected=calculateOrder(order.items,order.draft.mode,order.coupon);
+  if(!order.items.length||Object.keys(validateCheckout(order.draft,expected.total)).length||Object.entries(expected).some(([key,value])=>order.totals[key as keyof typeof expected]!==value))ctx.addIssue({code:'custom',message:'Pedido inválido'});
+ }
+});
 export function readLocal<T>(key:string,schema:z.ZodType<T>,fallback:T):T {try{const raw=localStorage.getItem(key);if(!raw)return fallback;const result=schema.safeParse(JSON.parse(raw));return result.success?result.data:fallback;}catch{return fallback;}}
 export function writeLocal(key:string,value:unknown):boolean {try{localStorage.setItem(key,JSON.stringify(value));return true;}catch{return false;}}
 export const restaurantName=(id:number)=>RESTAURANTS[id-1]?.name??'Restaurante';
