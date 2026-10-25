@@ -59,7 +59,7 @@ function Index() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, text: "" });
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mobileRef = useRef<HTMLInputElement>(null);
 
   const showToast = (text: string) => {
