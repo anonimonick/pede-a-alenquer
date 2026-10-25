@@ -5,9 +5,10 @@ import { RESTAURANTS, OFFERS, SLUGS, brl, PRODUCTS } from "./data";
 import { useCart } from "./cart-context";
 import { RestaurantMenu } from "./RestaurantMenu";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import "../../pedeai.css";
 import "./stage2.css";
+import { calculateOrder, money } from "./checkout-rules";
 
 const S = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
@@ -29,8 +30,8 @@ const PinIcon = ({ size = 18 }: { size?: number }) => <svg {...S} width={size} h
 
 
 
-export function PedeApp({ restaurantId }: { restaurantId?: number }) {
-  const { cart, setCart, add, pending, confirm, cancel, update } = useCart();
+export function PedeApp({ restaurantId, children }: { restaurantId?: number; children?: ReactNode }) {
+  const { cart, add, pending, confirm, cancel, update } = useCart();
   const [cat, setCat] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -38,6 +39,22 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mobileRef = useRef<HTMLInputElement>(null);
 
+  useEffect(()=>{
+    if(!open)return;
+    const previous=document.activeElement;
+    const drawer=document.getElementById('pa-cart-drawer');
+    drawer?.querySelector<HTMLButtonElement>('button')?.focus();
+    const keydown=(event:KeyboardEvent)=>{
+      if(event.key==='Escape'){setOpen(false);return;}
+      if(event.key!=='Tab'||!drawer)return;
+      const controls=Array.from(drawer.querySelectorAll<HTMLElement>('button, a[href]')).filter(e=>!e.hasAttribute('disabled'));
+      const first=controls[0],last=controls.at(-1);
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+      if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+    };
+    document.addEventListener('keydown',keydown);
+    return ()=>{document.removeEventListener('keydown',keydown);if(previous instanceof HTMLElement)previous.focus();};
+  },[open]);
   const showToast = (text: string) => {
     setToast({ show: true, text });
     clearTimeout(timer.current);
@@ -61,14 +78,7 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
   };
 
   const count = cart.reduce((a, i) => a + i.quantity, 0);
-  const total = cart.reduce((a, i) => a + i.price * i.quantity, 0);
-
-  const checkout = () => {
-    if (!cart.length) return showToast("Adicione itens ao carrinho antes de finalizar.");
-    showToast("Etapa de checkout demonstrativa. Pedido registrado localmente!");
-    setCart([]);
-    setOpen(false);
-  };
+  const total = calculateOrder(cart, 'pickup', null).subtotal;
 
   const footerLink = (label: string, msg: string) => (
     <li><a onClick={(e) => { e.preventDefault(); showToast(msg); }} href="#">{label}</a></li>
@@ -103,7 +113,7 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
         </div>
       </div>
 
-      {restaurantId ? <RestaurantMenu key={restaurantId} restaurantId={restaurantId} notify={showToast} /> : <main>
+      {children ?? (restaurantId ? <RestaurantMenu key={restaurantId} restaurantId={restaurantId} notify={showToast} /> : <main>
         <section className="hero-section">
           <div className="container">
             <div className="hero-card">
@@ -213,7 +223,7 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
             </div>
           </div>
         </section>
-      </main>}
+      </main>)}
 
       <footer className="footer">
         <div className="container">
@@ -263,12 +273,12 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
         <Button className="nav-item" onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); mobileRef.current?.focus(); }}>
           <SearchIcon /><span>Buscar</span>
         </Button>
-        <Button className="nav-item" onClick={() => setOpen(true)}><BagIcon /><span>Pedidos</span></Button>
+        <Button asChild className="nav-item"><Link to="/carrinho"><BagIcon /><span>Pedidos</span></Link></Button>
         <Button className="nav-item" onClick={() => showToast("Perfil de usuário demonstrativo.")}><UserIcon /><span>Perfil</span></Button>
       </nav>
 
       <div className={`cart-drawer-overlay ${open ? "active" : ""}`} onClick={() => setOpen(false)} />
-      <aside className={`cart-drawer ${open ? "active" : ""}`} aria-label="Carrinho de compras">
+      <aside id="pa-cart-drawer" inert={!open} role="dialog" aria-modal={open} className={`cart-drawer ${open ? "active" : ""}`} aria-label="Carrinho de compras">
         <div className="cart-drawer-header">
           <h3 className="cart-drawer-title">Meu Carrinho</h3>
           <Button variant="ghost" className="cart-drawer-close" onClick={() => setOpen(false)} aria-label="Fechar carrinho">×</Button>
@@ -287,10 +297,10 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
                 {i.extras.length > 0 && <p className="cart-detail">{i.extras.map(o=>o.name).join(', ')}</p>}
                 {i.notes && <p className="cart-detail">Obs.: {i.notes}</p>}
                 <div className="quantity-control">
-                  <Button variant="ghost" size="icon" aria-label={`Diminuir ${i.title}`} onClick={()=>update(i.key,i.quantity-1)}><Minus /></Button>
+                  <Button variant="ghost" size="icon" aria-label={`Diminuir ${i.title}`} onClick={()=>{update(i.key,i.quantity-1);if(i.quantity===1)showToast("Item removido do carrinho.");}}><Minus /></Button>
                   <span>{i.quantity}</span>
                   <Button variant="ghost" size="icon" aria-label={`Aumentar ${i.title}`} onClick={()=>update(i.key,i.quantity+1)}><Plus /></Button>
-                  <Button variant="ghost" size="icon" aria-label={`Remover ${i.title}`} onClick={()=>update(i.key,0)}><Trash2 /></Button>
+                  <Button variant="ghost" size="icon" aria-label={`Remover ${i.title}`} onClick={()=>{update(i.key,0);showToast("Item removido do carrinho.");}}><Trash2 /></Button>
                 </div>
               </div>
               <div className="cart-item-price">{brl(i.price * i.quantity)}</div>
@@ -298,18 +308,19 @@ export function PedeApp({ restaurantId }: { restaurantId?: number }) {
           ))}
         </div>
         <div className="cart-drawer-footer">
-          <div className="cart-total-row"><span>Total:</span><span>{brl(total)}</span></div>
-          <Button className="btn-checkout" onClick={checkout}>Finalizar Pedido (Demo)</Button>
+          <div className="cart-total-row"><span>Total:</span><span>{money(total)}</span></div>
+          <Button asChild className="btn-checkout"><Link to="/carrinho" onClick={()=>setOpen(false)}>Ver carrinho e finalizar</Link></Button>
+          <Button asChild variant="ghost" className="checkout-cta"><Link to="/checkout" onClick={()=>setOpen(false)}>Ir para checkout</Link></Button>
         </div>
       </aside>
 
-      {count > 0 && <Button className="mobile-cart-summary" onClick={()=>setOpen(true)}><ShoppingBag /><span>{count} {count === 1 ? 'item' : 'itens'} · Ver carrinho</span><strong>{brl(total)}</strong></Button>}
+      {count > 0 && !children && <Button asChild className="mobile-cart-summary"><Link to="/carrinho"><ShoppingBag /><span>{count} {count === 1 ? 'item' : 'itens'} · Ver carrinho</span><strong>{money(total)}</strong></Link></Button>}
       <Dialog open={Boolean(pending)} onOpenChange={(value)=>{if(!value)cancel();}}>
         <DialogContent className="pa-modal confirmation-modal">
           <ShoppingBag className="confirmation-icon" />
           <DialogTitle>Iniciar um novo pedido?</DialogTitle>
           <DialogDescription>Você já tem itens de outro restaurante no carrinho. Deseja limpar o carrinho e iniciar um novo pedido em {pending?.restaurant}?</DialogDescription>
-          <div className="confirmation-actions"><Button variant="outline" onClick={cancel}>Manter meu carrinho</Button><Button className="pa-primary" onClick={()=>{confirm();showToast('Novo pedido iniciado!');}}>Limpar e adicionar</Button></div>
+          <div className="confirmation-actions"><Button variant="outline" onClick={cancel}>Cancelar</Button><Button className="pa-primary" onClick={()=>{confirm();showToast('Novo pedido iniciado!');}}>Limpar carrinho e continuar</Button></div>
         </DialogContent>
       </Dialog>
       <div role="status" className={`toast ${toast.show ? "show" : ""}`}>

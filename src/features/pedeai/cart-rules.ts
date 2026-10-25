@@ -1,6 +1,6 @@
 import type { Option } from './data';
 export type CartItem = { key: string; id: number; restaurantId: number; restaurant: string; title: string; price: number; base: number; extras: Option[]; notes: string; quantity: number };
-export const productTotal = (base: number, extras: Option[], quantity: number) => (base + extras.reduce((sum, o) => sum + o.price, 0)) * quantity;
+export const productTotal = (base: number, extras: Option[], quantity: number) => (Math.round(base*100) + extras.reduce((sum, o) => sum + Math.round(o.price*100), 0)) * quantity / 100;
 export const needsReplacement = (cart: CartItem[], item: CartItem) => cart.length > 0 && cart[0]?.restaurantId !== item.restaurantId;
 export function insertItem(cart: CartItem[], item: CartItem): CartItem[] {
  const existing = cart.find(i => i.key === item.key);

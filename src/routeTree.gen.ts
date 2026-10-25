@@ -10,11 +10,29 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CarrinhoRouteImport } from './routes/carrinho'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as PedidoCodeRouteImport } from './routes/pedido.$code'
 import { Route as RestauranteSlugRouteImport } from './routes/restaurante.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CarrinhoRoute = CarrinhoRouteImport.update({
+  id: '/carrinho',
+  path: '/carrinho',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PedidoCodeRoute = PedidoCodeRouteImport.update({
+  id: '/pedido/$code',
+  path: '/pedido/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RestauranteSlugRoute = RestauranteSlugRouteImport.update({
@@ -25,27 +43,46 @@ const RestauranteSlugRoute = RestauranteSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/carrinho': typeof CarrinhoRoute
+  '/checkout': typeof CheckoutRoute
+  '/pedido/$code': typeof PedidoCodeRoute
   '/restaurante/$slug': typeof RestauranteSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/carrinho': typeof CarrinhoRoute
+  '/checkout': typeof CheckoutRoute
+  '/pedido/$code': typeof PedidoCodeRoute
   '/restaurante/$slug': typeof RestauranteSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/carrinho': typeof CarrinhoRoute
+  '/checkout': typeof CheckoutRoute
+  '/pedido/$code': typeof PedidoCodeRoute
   '/restaurante/$slug': typeof RestauranteSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/restaurante/$slug'
+  fullPaths:
+    '/' | '/carrinho' | '/checkout' | '/pedido/$code' | '/restaurante/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/restaurante/$slug'
-  id: '__root__' | '/' | '/restaurante/$slug'
+  to: '/' | '/carrinho' | '/checkout' | '/pedido/$code' | '/restaurante/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/carrinho'
+    | '/checkout'
+    | '/pedido/$code'
+    | '/restaurante/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CarrinhoRoute: typeof CarrinhoRoute
+  CheckoutRoute: typeof CheckoutRoute
+  PedidoCodeRoute: typeof PedidoCodeRoute
   RestauranteSlugRoute: typeof RestauranteSlugRoute
 }
 
@@ -56,6 +93,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/carrinho': {
+      id: '/carrinho'
+      path: '/carrinho'
+      fullPath: '/carrinho'
+      preLoaderRoute: typeof CarrinhoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pedido/$code': {
+      id: '/pedido/$code'
+      path: '/pedido/$code'
+      fullPath: '/pedido/$code'
+      preLoaderRoute: typeof PedidoCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/restaurante/$slug': {
@@ -70,6 +128,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CarrinhoRoute: CarrinhoRoute,
+  CheckoutRoute: CheckoutRoute,
+  PedidoCodeRoute: PedidoCodeRoute,
   RestauranteSlugRoute: RestauranteSlugRoute,
 }
 export const routeTree = rootRouteImport

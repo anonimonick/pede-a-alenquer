@@ -1,5 +1,6 @@
-# Etapa 2
-- [x] Six restaurant detail pages and customized menus, search and category tabs.
-- [x] Product options, quantity, notes and accessible dialogs.
-- [x] Shared single-restaurant cart, confirmation, editing and mobile summary.
-- [x] Preserve home and verify navigation and cart flows with tests and browser.
+# Etapa 3
+- [x] Full cart page and navigation, preserving home and menus.
+- [x] Checkout: fulfillment, address, coupons, payment, review and accessible validation.
+- [x] Integer-cent pricing and safe local persistence of cart, saved address and orders.
+- [x] Order confirmation, new order action and recent order readback.
+- [x] Rule tests and end-to-end desktop/mobile verification.
