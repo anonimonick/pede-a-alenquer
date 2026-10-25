@@ -11,3 +11,4 @@
 :root{--color-overlay:rgba(15,15,15,.6)}
 div[data-state="open"]:has(+ .pa-modal){z-index:700;background:var(--color-overlay)}
 .pa .btn-account{color:var(--color-dark)}.pa .cart-drawer-close{color:var(--color-gray)}
+.pa-modal > button:last-child{background:var(--color-white);color:var(--color-dark);opacity:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;box-shadow:var(--sh-sm)}
