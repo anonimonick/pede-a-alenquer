@@ -16,3 +16,5 @@
 - Compute order totals through one integer-cent calculator and persist immutable validated confirmation snapshots so completed orders never depend on a later edited cart.
 - Local demo accounts use a root account provider and Web Crypto PBKDF2 salted verifiers only in browser event handlers; remembered sessions use localStorage and transient sessions use sessionStorage, never production authentication.
 - Scope addresses and favorites to the local account, and associate completed order codes with its account without rewriting Stage 3 order snapshots; never attach another account's order history.
+- Supabase schema (profiles, user_roles, restaurants, restaurant_staff, categories, products, customer_addresses, orders, order_items) is prepared but not yet wired to the UI; the app still runs on local demo state until a dedicated migration step swaps it in.
+- Roles live only in user_roles, written exclusively via service_role (assign_role); orders are created only through the place_order DB function, which recomputes prices/fees/totals server-side.
