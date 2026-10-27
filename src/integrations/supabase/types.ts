@@ -51,10 +51,13 @@ export type Database = {
       }
       customer_addresses: {
         Row: {
+          cep: string | null
           city: string
           complement: string | null
           created_at: string
           id: string
+          instructions: string | null
+          is_default: boolean
           label: string
           neighborhood: string
           number: string
@@ -67,10 +70,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cep?: string | null
           city?: string
           complement?: string | null
           created_at?: string
           id?: string
+          instructions?: string | null
+          is_default?: boolean
           label?: string
           neighborhood: string
           number: string
@@ -83,10 +89,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cep?: string | null
           city?: string
           complement?: string | null
           created_at?: string
           id?: string
+          instructions?: string | null
+          is_default?: boolean
           label?: string
           neighborhood?: string
           number?: string
@@ -267,37 +276,49 @@ export type Database = {
         Row: {
           category_id: string | null
           created_at: string
+          demo_id: number | null
           description: string | null
           id: string
           image_url: string | null
           is_available: boolean
+          is_popular: boolean
           name: string
+          option_groups: Json
           price: number
           restaurant_id: string
+          sort_order: number
           updated_at: string
         }
         Insert: {
           category_id?: string | null
           created_at?: string
+          demo_id?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
           is_available?: boolean
+          is_popular?: boolean
           name: string
+          option_groups?: Json
           price: number
           restaurant_id: string
+          sort_order?: number
           updated_at?: string
         }
         Update: {
           category_id?: string | null
           created_at?: string
+          demo_id?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
           is_available?: boolean
+          is_popular?: boolean
           name?: string
+          option_groups?: Json
           price?: number
           restaurant_id?: string
+          sort_order?: number
           updated_at?: string
         }
         Relationships: [
@@ -388,8 +409,13 @@ export type Database = {
           address: string | null
           cover_url: string | null
           created_at: string
+          cuisine: string | null
           delivery_fee: number
+          delivery_time: string | null
+          demo_id: number | null
           description: string | null
+          home_filter: string | null
+          hours_label: string | null
           id: string
           is_active: boolean
           is_open: boolean
@@ -398,6 +424,8 @@ export type Database = {
           name: string
           opening_hours: Json
           phone: string | null
+          rating: number | null
+          review_count: number
           slug: string
           updated_at: string
         }
@@ -405,8 +433,13 @@ export type Database = {
           address?: string | null
           cover_url?: string | null
           created_at?: string
+          cuisine?: string | null
           delivery_fee?: number
+          delivery_time?: string | null
+          demo_id?: number | null
           description?: string | null
+          home_filter?: string | null
+          hours_label?: string | null
           id?: string
           is_active?: boolean
           is_open?: boolean
@@ -415,6 +448,8 @@ export type Database = {
           name: string
           opening_hours?: Json
           phone?: string | null
+          rating?: number | null
+          review_count?: number
           slug: string
           updated_at?: string
         }
@@ -422,8 +457,13 @@ export type Database = {
           address?: string | null
           cover_url?: string | null
           created_at?: string
+          cuisine?: string | null
           delivery_fee?: number
+          delivery_time?: string | null
+          demo_id?: number | null
           description?: string | null
+          home_filter?: string | null
+          hours_label?: string | null
           id?: string
           is_active?: boolean
           is_open?: boolean
@@ -432,6 +472,8 @@ export type Database = {
           name?: string
           opening_hours?: Json
           phone?: string | null
+          rating?: number | null
+          review_count?: number
           slug?: string
           updated_at?: string
         }
