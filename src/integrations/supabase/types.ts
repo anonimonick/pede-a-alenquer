@@ -117,6 +117,39 @@ export type Database = {
           },
         ]
       }
+      customer_favorites: {
+        Row: {
+          created_at: string
+          restaurant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          restaurant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          restaurant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_favorites_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_favorites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -534,6 +567,49 @@ export type Database = {
           _fulfillment?: Database["public"]["Enums"]["fulfillment_mode"]
           _items: Json
           _notes?: string
+          _payment_method: Database["public"]["Enums"]["payment_method"]
+          _restaurant_id: string
+        }
+        Returns: {
+          address_id: string | null
+          change_for: number | null
+          code: string
+          courier_id: string | null
+          created_at: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          delivery_address: Json | null
+          delivery_fee: number
+          discount: number
+          fulfillment: Database["public"]["Enums"]["fulfillment_mode"]
+          id: string
+          notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          restaurant_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      place_order_v2: {
+        Args: {
+          _address: Json
+          _change_for: number
+          _coupon: string
+          _customer_name: string
+          _customer_phone: string
+          _fulfillment: Database["public"]["Enums"]["fulfillment_mode"]
+          _items: Json
+          _notes: string
           _payment_method: Database["public"]["Enums"]["payment_method"]
           _restaurant_id: string
         }
