@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { addressSchema, emptyDraft, validateCheckout, type Address } from './checkout-rules';
-export const ACCOUNT_NOTICE='Ambiente demonstrativo front-end: contas salvas localmente neste navegador para testes de interface, sem backend de produção.';
-export const RECOVERY_NOTICE='Como este é um protótipo de demonstração sem servidor de e-mail conectado, a recuperação de senha por link real estará disponível quando o backend for integrado.';
+export const ACCOUNT_NOTICE='Sua conta, endereços, favoritos e pedidos ficam salvos com segurança no servidor do Pede Aí. Pagamentos ainda são demonstrativos.';
+export const RECOVERY_NOTICE='Se este e-mail estiver cadastrado, você receberá um link para criar uma nova senha. Confira também a caixa de spam.';
 export const savedAddressSchema=z.object({id:z.string().uuid(),address:addressSchema,isDefault:z.boolean()});
 export type SavedAddress=z.infer<typeof savedAddressSchema>;
 export const accountSchema=z.object({id:z.string().uuid(),name:z.string().min(2).max(100),email:z.string().email().max(254),phone:z.string().max(25),createdAt:z.string().datetime(),salt:z.string().regex(/^[a-f0-9]{32}$/),verifier:z.string().regex(/^[a-f0-9]{64}$/),addresses:z.array(savedAddressSchema).max(50),favorites:z.array(z.number().int().min(1).max(6)).max(6),orderCodes:z.array(z.string().regex(/^PA-[A-Z0-9]+$/)).max(500)});

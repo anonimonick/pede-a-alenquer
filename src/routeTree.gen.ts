@@ -17,6 +17,7 @@ import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
+import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as PedidoCodeRouteImport } from './routes/pedido.$code'
 import { Route as RestauranteSlugRouteImport } from './routes/restaurante.$slug'
@@ -61,6 +62,11 @@ const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
   path: '/recuperar-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
+  id: '/redefinir-senha',
+  path: '/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
   path: '/termos',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/minha-conta': typeof MinhaContaRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/termos': typeof TermosRoute
   '/pedido/$code': typeof PedidoCodeRoute
   '/restaurante/$slug': typeof RestauranteSlugRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/minha-conta': typeof MinhaContaRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/termos': typeof TermosRoute
   '/pedido/$code': typeof PedidoCodeRoute
   '/restaurante/$slug': typeof RestauranteSlugRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/minha-conta': typeof MinhaContaRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/termos': typeof TermosRoute
   '/pedido/$code': typeof PedidoCodeRoute
   '/restaurante/$slug': typeof RestauranteSlugRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/minha-conta'
     | '/privacidade'
     | '/recuperar-senha'
+    | '/redefinir-senha'
     | '/termos'
     | '/pedido/$code'
     | '/restaurante/$slug'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/minha-conta'
     | '/privacidade'
     | '/recuperar-senha'
+    | '/redefinir-senha'
     | '/termos'
     | '/pedido/$code'
     | '/restaurante/$slug'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/minha-conta'
     | '/privacidade'
     | '/recuperar-senha'
+    | '/redefinir-senha'
     | '/termos'
     | '/pedido/$code'
     | '/restaurante/$slug'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   MinhaContaRoute: typeof MinhaContaRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
+  RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   TermosRoute: typeof TermosRoute
   PedidoCodeRoute: typeof PedidoCodeRoute
   RestauranteSlugRoute: typeof RestauranteSlugRoute
@@ -231,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecuperarSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/redefinir-senha': {
+      id: '/redefinir-senha'
+      path: '/redefinir-senha'
+      fullPath: '/redefinir-senha'
+      preLoaderRoute: typeof RedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/termos': {
       id: '/termos'
       path: '/termos'
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinhaContaRoute: MinhaContaRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
+  RedefinirSenhaRoute: RedefinirSenhaRoute,
   TermosRoute: TermosRoute,
   PedidoCodeRoute: PedidoCodeRoute,
   RestauranteSlugRoute: RestauranteSlugRoute,

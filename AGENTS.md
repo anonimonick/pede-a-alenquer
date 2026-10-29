@@ -14,7 +14,7 @@
 - Keep restaurant/menu fixtures and pure cart pricing rules in browser-safe modules so all ordering entry points share the same constraints and tests.
 - Use dedicated TanStack cart, checkout and confirmation routes, not a standalone HTML page switcher, to preserve the existing framework and direct navigation.
 - Compute order totals through one integer-cent calculator and persist immutable validated confirmation snapshots so completed orders never depend on a later edited cart.
-- Local demo accounts use a root account provider and Web Crypto PBKDF2 salted verifiers only in browser event handlers; remembered sessions use localStorage and transient sessions use sessionStorage, never production authentication.
-- Scope addresses and favorites to the local account, and associate completed order codes with its account without rewriting Stage 3 order snapshots; never attach another account's order history.
-- Supabase schema (profiles, user_roles, restaurants, restaurant_staff, categories, products, customer_addresses, orders, order_items) is prepared but not yet wired to the UI; the app still runs on local demo state until a dedicated migration step swaps it in.
+- Accounts use Supabase Auth through the root AccountProvider; profile, addresses (customer_addresses) and favorites (customer_favorites) are read/written with RLS as the signed-in user.
+- Orders are placed only via the place_order_v2 RPC, which recomputes prices, extras, coupon, fee and total server-side; the menu UI still renders browser fixtures mapped to DB rows by demo_id.
+- Order history in Minha Conta comes from the orders table; the cart and checkout draft stay in browser storage.
 - Roles live only in user_roles, written exclusively via service_role (assign_role); orders are created only through the place_order DB function, which recomputes prices/fees/totals server-side.
