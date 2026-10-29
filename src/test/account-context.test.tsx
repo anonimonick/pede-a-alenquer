@@ -1,12 +1,19 @@
-import { act,renderHook,cleanup } from '@testing-library/react';
-import { describe,it,expect,beforeEach } from 'vitest';
-import { webcrypto } from 'node:crypto';
-import { AccountProvider,useAccount } from '@/features/pedeai/account-context';
-import { createAccount,type Registration } from '@/features/pedeai/account-rules';
-const input:Registration={name:'Maria Silva',email:'maria@example.com',phone:'93999998888',password:'abc123',confirmation:'abc123',accepted:true};
-beforeEach(()=>{cleanup();localStorage.clear();sessionStorage.clear();Object.defineProperty(globalThis,'crypto',{value:webcrypto,configurable:true});});
-describe('Local account isolation and sessions',()=>{
- it('keeps favorites and order ownership isolated between accounts',async()=>{const a=await createAccount(input);const b=await createAccount({...input,email:'other@example.com'});localStorage.setItem('pa-accounts-v4',JSON.stringify([a,b]));const {result}=renderHook(()=>useAccount(),{wrapper:AccountProvider});await act(async()=>{await result.current.login(a.email,'abc123',true);});act(()=>{result.current.toggleFavorite(1);result.current.attachOrders(['PA-TEST']);});await act(async()=>{await result.current.login(b.email,'abc123',false);});act(()=>result.current.attachOrders(['PA-TEST']));expect(result.current.currentUser?.favorites).toEqual([]);expect(result.current.currentUser?.orderCodes).toEqual([]);expect(localStorage.getItem('pa-session-v4')).toBeNull();expect(JSON.parse(sessionStorage.getItem('pa-session-v4')??'null')).toBe(b.id);});
- it('restores remembered sessions and clears both session stores on logout',async()=>{const a=await createAccount(input);localStorage.setItem('pa-accounts-v4',JSON.stringify([a]));localStorage.setItem('pa-session-v4',JSON.stringify(a.id));const {result}=renderHook(()=>useAccount(),{wrapper:AccountProvider});expect(result.current.currentUser?.email).toBe(a.email);act(()=>result.current.logout());expect(result.current.currentUser).toBeNull();expect(localStorage.getItem('pa-session-v4')).toBeNull();expect(sessionStorage.getItem('pa-session-v4')).toBeNull();});
- it('recovers safely from corrupt accounts and sessions',()=>{localStorage.setItem('pa-accounts-v4','broken');localStorage.setItem('pa-session-v4','broken');const {result}=renderHook(()=>useAccount(),{wrapper:AccountProvider});expect(result.current.ready).toBe(true);expect(result.current.currentUser).toBeNull();});
+import { describe, expect, it, vi } from 'vitest';
+vi.mock('@/integrations/supabase/client', () => ({ supabase: {} }));
+import { friendlyError, rowToAddress, STATUS_LABEL } from '@/features/pedeai/account-context';
+
+describe('Supabase account mapping', () => {
+  it('maps a stored address row to the checkout address shape', () => {
+    const saved = rowToAddress({ id: 'a1', label: 'Trabalho', recipient_name: 'Ana', phone: '(93) 99999-0000', cep: null, street: 'Rua A', number: '5', neighborhood: 'Centro', complement: null, reference: 'Praça', instructions: null, is_default: true });
+    expect(saved).toEqual({ id: 'a1', isDefault: true, address: { type: 'Trabalho', name: 'Ana', phone: '(93) 99999-0000', cep: '', street: 'Rua A', number: '5', district: 'Centro', complement: '', reference: 'Praça', instructions: '' } });
+  });
+  it('shows wrong credentials without revealing which field failed', () => {
+    expect(friendlyError('Invalid login credentials')).toBe('E-mail ou senha incorretos.');
+  });
+  it('explains server rejection of an unmet minimum order', () => {
+    expect(friendlyError('Pedido mínimo não atingido')).toBe('O pedido mínimo deste restaurante não foi atingido.');
+  });
+  it('labels a newly received order as in preparation', () => {
+    expect(STATUS_LABEL['received']).toBe('Em preparação');
+  });
 });
