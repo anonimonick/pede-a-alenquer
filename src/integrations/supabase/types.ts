@@ -208,6 +208,7 @@ export type Database = {
         Row: {
           address_id: string | null
           change_for: number | null
+          client_request_id: string | null
           code: string
           courier_id: string | null
           created_at: string
@@ -231,6 +232,7 @@ export type Database = {
         Insert: {
           address_id?: string | null
           change_for?: number | null
+          client_request_id?: string | null
           code: string
           courier_id?: string | null
           created_at?: string
@@ -254,6 +256,7 @@ export type Database = {
         Update: {
           address_id?: string | null
           change_for?: number | null
+          client_request_id?: string | null
           code?: string
           courier_id?: string | null
           created_at?: string
@@ -573,6 +576,7 @@ export type Database = {
         Returns: {
           address_id: string | null
           change_for: number | null
+          client_request_id: string | null
           code: string
           courier_id: string | null
           created_at: string
@@ -616,6 +620,53 @@ export type Database = {
         Returns: {
           address_id: string | null
           change_for: number | null
+          client_request_id: string | null
+          code: string
+          courier_id: string | null
+          created_at: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          delivery_address: Json | null
+          delivery_fee: number
+          discount: number
+          fulfillment: Database["public"]["Enums"]["fulfillment_mode"]
+          id: string
+          notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          restaurant_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      place_order_v3: {
+        Args: {
+          _address: Json
+          _address_id: string
+          _change_for: number
+          _coupon: string
+          _customer_name: string
+          _customer_phone: string
+          _fulfillment: Database["public"]["Enums"]["fulfillment_mode"]
+          _items: Json
+          _notes: string
+          _payment_method: Database["public"]["Enums"]["payment_method"]
+          _request_id: string
+          _restaurant_id: string
+        }
+        Returns: {
+          address_id: string | null
+          change_for: number | null
+          client_request_id: string | null
           code: string
           courier_id: string | null
           created_at: string
