@@ -168,22 +168,23 @@ function useAccountState() {
   };
 
   /** Sends the order to the database, which recomputes every price; returns the stored snapshot. */
-  const placeOrder = async (cart: CartItem[], draft: Draft, coupon: Coupon | null): Promise<{ order?: DemoOrder; error?: string }> => {
+  const placeOrder = async (cart: CartItem[], draft: Draft, coupon: Coupon | null, requestId: string = crypto.randomUUID()): Promise<{ order?: DemoOrder; error?: string }> => {
     if (!userId) return { error: 'Entre na sua conta para confirmar o pedido.' };
     const c = catalog ?? await loadCatalog();
     const rid = c?.restaurants.get(cart[0]?.restaurantId ?? 0);
     const items = cart.map(i => ({ product_id: c?.products.get(i.id), quantity: i.quantity, notes: i.notes, extras: i.extras.map(e => e.name) }));
     if (!c || !rid || items.some(i => !i.product_id)) return { error: 'Cardápio indisponível no servidor. Tente novamente.' };
     const change = parseChange(draft.change);
-    const { data, error } = await supabase.rpc('place_order_v2', {
-      _restaurant_id: rid, _items: items, _payment_method: PAYMENT[draft.payment], _fulfillment: draft.mode,
+    const addressId = draft.mode === 'delivery' ? addresses.find(a => JSON.stringify(a.address) === JSON.stringify(draft.address))?.id ?? null : null;
+    const { data, error } = await supabase.rpc('place_order_v3' as never, {
+      _request_id: requestId, _address_id: addressId, _restaurant_id: rid, _items: items, _payment_method: PAYMENT[draft.payment], _fulfillment: draft.mode,
       _address: draft.mode === 'delivery' ? draft.address : {}, _change_for: draft.payment === 'Dinheiro' && change != null && Number.isFinite(change) ? change / 100 : null,
       _notes: draft.address.instructions || null, _coupon: coupon ?? '', _customer_name: draft.address.name, _customer_phone: draft.address.phone,
     } as never);
     if (error || !data) return { error: friendlyError(error?.message) };
     const row = data as unknown as { code: string; created_at: string; subtotal: number; delivery_fee: number; discount: number; total: number };
     const order: DemoOrder = { code: row.code, createdAt: row.created_at, status: 'Em preparação', items: cart.map(i => ({ ...i, extras: i.extras.map(o => ({ ...o })) })), draft: structuredClone(draft), coupon, totals: { subtotal: cents(row.subtotal), delivery: cents(row.delivery_fee), discount: cents(row.discount), total: cents(row.total) } };
-    setOrders(o => [order, ...o]);
+    setOrders(o => [order, ...o.filter(x => x.code !== order.code)]);
     return { order };
   };
 
