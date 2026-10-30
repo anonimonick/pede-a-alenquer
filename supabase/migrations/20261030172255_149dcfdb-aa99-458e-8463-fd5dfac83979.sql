@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.place_order_v2(uuid, jsonb, payment_method, fulfillment_mode, jsonb, numeric, text, text, text, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.place_order(uuid, jsonb, payment_method, fulfillment_mode, uuid, numeric, text) FROM PUBLIC, anon, authenticated;
