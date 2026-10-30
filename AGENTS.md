@@ -15,6 +15,6 @@
 - Use dedicated TanStack cart, checkout and confirmation routes, not a standalone HTML page switcher, to preserve the existing framework and direct navigation.
 - Compute order totals through one integer-cent calculator and persist immutable validated confirmation snapshots so completed orders never depend on a later edited cart.
 - Accounts use Supabase Auth through the root AccountProvider; profile, addresses (customer_addresses) and favorites (customer_favorites) are read/written with RLS as the signed-in user.
-- Orders are placed only via the place_order_v2 RPC, which recomputes prices, extras, coupon, fee and total server-side; the menu UI still renders browser fixtures mapped to DB rows by demo_id.
+- Orders are placed only via the place_order_v3 RPC (idempotent per client_request_id; checks restaurant open and address ownership; older order functions are revoked), which recomputes prices, extras, coupon, fee and total server-side; the menu UI still renders browser fixtures mapped to DB rows by demo_id.
 - Order history in Minha Conta comes from the orders table; the cart and checkout draft stay in browser storage.
 - Roles live only in user_roles, written exclusively via service_role (assign_role); orders are created only through the place_order DB function, which recomputes prices/fees/totals server-side.
