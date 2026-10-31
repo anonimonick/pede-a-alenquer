@@ -74,7 +74,7 @@ function useAccountState() {
       });
       const addr = (o.delivery_address ?? {}) as Partial<Address>;
       const draft: Draft = { mode: o.fulfillment, saveAddress: false, reviewed: true, payment: PAYMENT_LABEL[o.payment_method], change: o.change_for != null ? String(o.change_for).replace('.', ',') : '', address: { ...emptyAddress, ...addr, name: addr.name || o.customer_name, phone: addr.phone || o.customer_phone } };
-      return { code: o.code, createdAt: o.created_at, status: (STATUS_LABEL[o.status] ?? o.status) as DemoOrder['status'], items, draft, coupon: null, totals: { subtotal: cents(o.subtotal), delivery: cents(o.delivery_fee), discount: cents(o.discount), total: cents(o.total) } };
+      return { code: o.code, createdAt: o.created_at, status: (orderStatusLabel(o.status, o.accepted_at) + (o.status === 'cancelled' && o.rejection_reason ? ` — ${o.rejection_reason}` : '')) as DemoOrder['status'], items, draft, coupon: null, totals: { subtotal: cents(o.subtotal), delivery: cents(o.delivery_fee), discount: cents(o.discount), total: cents(o.total) } };
     }));
   }, []);
 
@@ -108,6 +108,12 @@ function useAccountState() {
     void loadCatalog().then(c => { catalogRef = c; return supabase.auth.getSession(); }).then(({ data }) => apply(data.session));
     return () => { active = false; sub.subscription.unsubscribe(); };
   }, [loadCatalog, loadUser]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const t = setInterval(() => { if (document.visibilityState === 'visible') void loadOrders(userId, catalog); }, 20000);
+    return () => clearInterval(t);
+  }, [userId, catalog, loadOrders]);
 
   const currentUser: Customer | null = userId ? { id: userId, name: profile.name || email.split('@')[0] || 'Cliente', email, phone: profile.phone, createdAt: createdAt || new Date().toISOString(), addresses, favorites, orderCodes: orders.map(o => o.code) } : null;
 
@@ -195,7 +201,7 @@ function useAccountState() {
     return { order };
   };
 
-  return { currentUser, ready, warning, orders, register, login, recover, logout, updateProfile, saveAddress, deleteAddress, defaultAddress, toggleFavorite, placeOrder, attachOrders: (_codes: string[]) => {} };
+  return { currentUser, userId, openByDemo: catalog?.open, reloadCatalog: loadCatalog, ready, warning, orders, register, login, recover, logout, updateProfile, saveAddress, deleteAddress, defaultAddress, toggleFavorite, placeOrder, attachOrders: (_codes: string[]) => {} };
 }
 export function AccountProvider({ children }: { children: ReactNode }) { return <AccountContext.Provider value={useAccountState()}>{children}</AccountContext.Provider>; }
 export function useAccount() { const account = useContext(AccountContext); if (!account) throw new Error('AccountProvider required'); return account; }
