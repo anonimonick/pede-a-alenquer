@@ -7,10 +7,13 @@ import { RESTAURANTS, DETAILS, PRODUCTS, brl, type Product, type Option } from '
 import { productTotal } from './cart-rules';
 import { useCart } from './cart-context';
 import { FavoriteButton } from './AccountControls';
+import { useAccount } from './account-context';
 
 export function RestaurantMenu({restaurantId,notify}:{restaurantId:number;notify:(text:string)=>void}) {
  const restaurant=RESTAURANTS[restaurantId-1];
  const details=DETAILS[restaurantId-1];
+ const {openByDemo}=useAccount();
+ const isOpen=openByDemo?.get(restaurantId)??details?.isOpen??false;
  const products=PRODUCTS.filter(p=>p.restaurantId===restaurantId);
  const [search,setSearch]=useState('');
  const [category,setCategory]=useState('Todos');
@@ -24,7 +27,7 @@ export function RestaurantMenu({restaurantId,notify}:{restaurantId:number;notify
   <div className="restaurant-cover"><img src={restaurant.img} alt={`Capa demonstrativa de ${restaurant.name}`}/></div>
   <section className="container restaurant-heading">
    <img className="restaurant-avatar" src={restaurant.img} alt={`Foto demonstrativa de ${restaurant.name}`}/>
-   <div className="restaurant-heading-body"><div className="restaurant-heading-top"><span className="menu-demo">Demonstrativo</span><span className={`restaurant-status ${details.isOpen?'is-open':'is-closed'}`}>{details.isOpen?'Aberto':'Fechado'}</span></div>
+   <div className="restaurant-heading-body"><div className="restaurant-heading-top"><span className="menu-demo">Demonstrativo</span><span className={`restaurant-status ${isOpen?'is-open':'is-closed'}`}>{isOpen?'Aberto':'Fechado'}</span></div>
    <FavoriteButton restaurantId={restaurantId}/><h1>{restaurant.name}</h1><p className="menu-muted">{restaurant.category}</p>
    <p className="menu-rating"><Star size={16} fill="currentColor"/><strong>{restaurant.rating.toFixed(1)}</strong><span>· {details.reviews} avaliações demonstrativas</span></p>
    <div className="restaurant-facts"><span><Clock size={16}/>{restaurant.time}</span><span><Truck size={16}/>{restaurant.fee==='Grátis'?'Entrega grátis':`Entrega ${restaurant.fee}`}</span><span>Pedido mínimo {brl(details.minimum)}</span><span>Horário demonstrativo: {details.hours}</span></div></div>
