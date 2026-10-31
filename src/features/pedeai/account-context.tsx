@@ -4,11 +4,14 @@ import { normalizeEmail, validateRegistration, type Customer, type Registration,
 import { emptyAddress, parseChange, type Address, type Coupon, type DemoOrder, type Draft } from './checkout-rules';
 import type { CartItem } from './cart-rules';
 import { PRODUCTS, RESTAURANTS } from './data';
+import { applyDbMenu } from './menu-sync';
 
-type Catalog = { restaurants: Map<number, string>; restaurantDemo: Map<string, number>; products: Map<number, string>; productDemo: Map<string, number> };
+type Catalog = { restaurants: Map<number, string>; restaurantDemo: Map<string, number>; products: Map<number, string>; productDemo: Map<string, number>; open: Map<number, boolean> };
 const PAYMENT = { Pix: 'pix', 'Cartão de Crédito': 'credit_card', 'Cartão de Débito': 'debit_card', Dinheiro: 'cash' } as const;
 const PAYMENT_LABEL = { pix: 'Pix', credit_card: 'Cartão de Crédito', debit_card: 'Cartão de Débito', cash: 'Dinheiro' } as const;
-export const STATUS_LABEL: Record<string, string> = { received: 'Em preparação', preparing: 'Em preparação', ready: 'Pronto', out_for_delivery: 'Saiu para entrega', delivered: 'Entregue', cancelled: 'Cancelado' };
+export const STATUS_LABEL: Record<string, string> = { received: 'Aguardando restaurante', accepted: 'Pedido aceito', preparing: 'Em preparação', ready: 'Pronto', out_for_delivery: 'Saiu para entrega', delivered: 'Entregue', cancelled: 'Recusado / cancelado' };
+/** Customer-facing label: an accepted order still stored as `received` shows as accepted. */
+export const orderStatusLabel = (status: string, acceptedAt: string | null) => STATUS_LABEL[status === 'received' && acceptedAt ? 'accepted' : status] ?? status;
 const cents = (v: unknown) => Math.round(Number(v) * 100);
 
 type AddressRow = { id: string; label: string; recipient_name: string; phone: string; cep: string | null; street: string; number: string; neighborhood: string; complement: string | null; reference: string | null; instructions: string | null; is_default: boolean };
@@ -47,11 +50,15 @@ function useAccountState() {
   const [warning, setWarning] = useState(false);
 
   const loadCatalog = useCallback(async () => {
-    const [r, p] = await Promise.all([supabase.from('restaurants').select('id,demo_id'), supabase.from('products').select('id,demo_id')]);
+    const [r, p] = await Promise.all([
+      supabase.from('restaurants').select('id,demo_id,is_open,is_active'),
+      supabase.from('products').select('id,demo_id,restaurant_id,name,description,price,image_url,is_popular,is_available,categories(name)'),
+    ]);
     if (r.error || p.error) { setWarning(true); return null; }
-    const c: Catalog = { restaurants: new Map(), restaurantDemo: new Map(), products: new Map(), productDemo: new Map() };
-    for (const x of r.data) if (x.demo_id != null) { c.restaurants.set(x.demo_id, x.id); c.restaurantDemo.set(x.id, x.demo_id); }
+    const c: Catalog = { restaurants: new Map(), restaurantDemo: new Map(), products: new Map(), productDemo: new Map(), open: new Map() };
+    for (const x of r.data) if (x.demo_id != null) { c.restaurants.set(x.demo_id, x.id); c.restaurantDemo.set(x.id, x.demo_id); c.open.set(x.demo_id, x.is_open && x.is_active); }
     for (const x of p.data) if (x.demo_id != null) { c.products.set(x.demo_id, x.id); c.productDemo.set(x.id, x.demo_id); }
+    applyDbMenu(p.data.filter(x => x.is_available).map(x => ({ demo_id: x.demo_id, restaurant_demo: c.restaurantDemo.get(x.restaurant_id) ?? null, name: x.name, description: x.description, price: x.price, image_url: x.image_url, is_popular: x.is_popular, category: (x.categories as { name: string } | null)?.name ?? null })));
     setCatalog(c); return c;
   }, []);
 
