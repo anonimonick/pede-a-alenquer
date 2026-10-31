@@ -47,6 +47,7 @@ function useAccountState() {
   const [orders, setOrders] = useState<DemoOrder[]>([]);
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [ready, setReady] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
   const [warning, setWarning] = useState(false);
 
   const loadCatalog = useCallback(async () => {
@@ -79,11 +80,13 @@ function useAccountState() {
   }, []);
 
   const loadUser = useCallback(async (uid: string, c: Catalog | null) => {
-    const [p, a, f] = await Promise.all([
+    const [p, a, f, st] = await Promise.all([
       supabase.from('profiles').select('full_name,phone').eq('id', uid).maybeSingle(),
       supabase.from('customer_addresses').select('*').eq('user_id', uid).order('created_at'),
       supabase.from('customer_favorites').select('restaurant_id').eq('user_id', uid),
+      supabase.from('restaurant_staff').select('id').eq('user_id', uid).limit(1),
     ]);
+    setIsStaff(Boolean(st.data?.length));
     if (p.error || a.error || f.error) setWarning(true);
     setProfile({ name: p.data?.full_name ?? '', phone: p.data?.phone ?? '' });
     setAddresses((a.data ?? []).map(rowToAddress));
@@ -95,7 +98,7 @@ function useAccountState() {
     let active = true; let catalogRef: Catalog | null = null;
     const apply = async (session: { user: { id: string; email?: string | undefined; created_at: string } } | null) => {
       if (!active) return;
-      if (!session) { setUserId(null); setAddresses([]); setFavorites([]); setOrders([]); setReady(true); return; }
+      if (!session) { setUserId(null); setIsStaff(false); setAddresses([]); setFavorites([]); setOrders([]); setReady(true); return; }
       setUserId(session.user.id); setEmail(session.user.email ?? ''); setCreatedAt(session.user.created_at);
       catalogRef = catalogRef ?? await loadCatalog();
       await loadUser(session.user.id, catalogRef);
@@ -201,7 +204,7 @@ function useAccountState() {
     return { order };
   };
 
-  return { currentUser, userId, openByDemo: catalog?.open, reloadCatalog: loadCatalog, ready, warning, orders, register, login, recover, logout, updateProfile, saveAddress, deleteAddress, defaultAddress, toggleFavorite, placeOrder, attachOrders: (_codes: string[]) => {} };
+  return { currentUser, userId, openByDemo: catalog?.open, isStaff, reloadCatalog: loadCatalog, ready, warning, orders, register, login, recover, logout, updateProfile, saveAddress, deleteAddress, defaultAddress, toggleFavorite, placeOrder, attachOrders: (_codes: string[]) => {} };
 }
 export function AccountProvider({ children }: { children: ReactNode }) { return <AccountContext.Provider value={useAccountState()}>{children}</AccountContext.Provider>; }
 export function useAccount() { const account = useContext(AccountContext); if (!account) throw new Error('AccountProvider required'); return account; }
