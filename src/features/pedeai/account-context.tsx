@@ -4,11 +4,14 @@ import { normalizeEmail, validateRegistration, type Customer, type Registration,
 import { emptyAddress, parseChange, type Address, type Coupon, type DemoOrder, type Draft } from './checkout-rules';
 import type { CartItem } from './cart-rules';
 import { PRODUCTS, RESTAURANTS } from './data';
+import { applyDbMenu } from './menu-sync';
 
-type Catalog = { restaurants: Map<number, string>; restaurantDemo: Map<string, number>; products: Map<number, string>; productDemo: Map<string, number> };
+type Catalog = { restaurants: Map<number, string>; restaurantDemo: Map<string, number>; products: Map<number, string>; productDemo: Map<string, number>; open: Map<number, boolean> };
 const PAYMENT = { Pix: 'pix', 'Cartão de Crédito': 'credit_card', 'Cartão de Débito': 'debit_card', Dinheiro: 'cash' } as const;
 const PAYMENT_LABEL = { pix: 'Pix', credit_card: 'Cartão de Crédito', debit_card: 'Cartão de Débito', cash: 'Dinheiro' } as const;
-export const STATUS_LABEL: Record<string, string> = { received: 'Em preparação', preparing: 'Em preparação', ready: 'Pronto', out_for_delivery: 'Saiu para entrega', delivered: 'Entregue', cancelled: 'Cancelado' };
+export const STATUS_LABEL: Record<string, string> = { received: 'Aguardando restaurante', accepted: 'Pedido aceito', preparing: 'Em preparação', ready: 'Pronto', out_for_delivery: 'Saiu para entrega', delivered: 'Entregue', cancelled: 'Recusado / cancelado' };
+/** Customer-facing label: an accepted order still stored as `received` shows as accepted. */
+export const orderStatusLabel = (status: string, acceptedAt: string | null) => STATUS_LABEL[status === 'received' && acceptedAt ? 'accepted' : status] ?? status;
 const cents = (v: unknown) => Math.round(Number(v) * 100);
 
 type AddressRow = { id: string; label: string; recipient_name: string; phone: string; cep: string | null; street: string; number: string; neighborhood: string; complement: string | null; reference: string | null; instructions: string | null; is_default: boolean };
@@ -44,14 +47,19 @@ function useAccountState() {
   const [orders, setOrders] = useState<DemoOrder[]>([]);
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [ready, setReady] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
   const [warning, setWarning] = useState(false);
 
   const loadCatalog = useCallback(async () => {
-    const [r, p] = await Promise.all([supabase.from('restaurants').select('id,demo_id'), supabase.from('products').select('id,demo_id')]);
+    const [r, p] = await Promise.all([
+      supabase.from('restaurants').select('id,demo_id,is_open,is_active'),
+      supabase.from('products').select('id,demo_id,restaurant_id,name,description,price,image_url,is_popular,is_available,categories(name)'),
+    ]);
     if (r.error || p.error) { setWarning(true); return null; }
-    const c: Catalog = { restaurants: new Map(), restaurantDemo: new Map(), products: new Map(), productDemo: new Map() };
-    for (const x of r.data) if (x.demo_id != null) { c.restaurants.set(x.demo_id, x.id); c.restaurantDemo.set(x.id, x.demo_id); }
+    const c: Catalog = { restaurants: new Map(), restaurantDemo: new Map(), products: new Map(), productDemo: new Map(), open: new Map() };
+    for (const x of r.data) if (x.demo_id != null) { c.restaurants.set(x.demo_id, x.id); c.restaurantDemo.set(x.id, x.demo_id); c.open.set(x.demo_id, x.is_open && x.is_active); }
     for (const x of p.data) if (x.demo_id != null) { c.products.set(x.demo_id, x.id); c.productDemo.set(x.id, x.demo_id); }
+    applyDbMenu(p.data.filter(x => x.is_available).map(x => ({ demo_id: x.demo_id, restaurant_demo: c.restaurantDemo.get(x.restaurant_id) ?? null, name: x.name, description: x.description, price: x.price, image_url: x.image_url, is_popular: x.is_popular, category: (x.categories as { name: string } | null)?.name ?? null })));
     setCatalog(c); return c;
   }, []);
 
@@ -67,16 +75,18 @@ function useAccountState() {
       });
       const addr = (o.delivery_address ?? {}) as Partial<Address>;
       const draft: Draft = { mode: o.fulfillment, saveAddress: false, reviewed: true, payment: PAYMENT_LABEL[o.payment_method], change: o.change_for != null ? String(o.change_for).replace('.', ',') : '', address: { ...emptyAddress, ...addr, name: addr.name || o.customer_name, phone: addr.phone || o.customer_phone } };
-      return { code: o.code, createdAt: o.created_at, status: (STATUS_LABEL[o.status] ?? o.status) as DemoOrder['status'], items, draft, coupon: null, totals: { subtotal: cents(o.subtotal), delivery: cents(o.delivery_fee), discount: cents(o.discount), total: cents(o.total) } };
+      return { code: o.code, createdAt: o.created_at, status: (orderStatusLabel(o.status, o.accepted_at) + (o.status === 'cancelled' && o.rejection_reason ? ` — ${o.rejection_reason}` : '')) as DemoOrder['status'], items, draft, coupon: null, totals: { subtotal: cents(o.subtotal), delivery: cents(o.delivery_fee), discount: cents(o.discount), total: cents(o.total) } };
     }));
   }, []);
 
   const loadUser = useCallback(async (uid: string, c: Catalog | null) => {
-    const [p, a, f] = await Promise.all([
+    const [p, a, f, st] = await Promise.all([
       supabase.from('profiles').select('full_name,phone').eq('id', uid).maybeSingle(),
       supabase.from('customer_addresses').select('*').eq('user_id', uid).order('created_at'),
       supabase.from('customer_favorites').select('restaurant_id').eq('user_id', uid),
+      supabase.from('restaurant_staff').select('id').eq('user_id', uid).limit(1),
     ]);
+    setIsStaff(Boolean(st.data?.length));
     if (p.error || a.error || f.error) setWarning(true);
     setProfile({ name: p.data?.full_name ?? '', phone: p.data?.phone ?? '' });
     setAddresses((a.data ?? []).map(rowToAddress));
@@ -88,7 +98,7 @@ function useAccountState() {
     let active = true; let catalogRef: Catalog | null = null;
     const apply = async (session: { user: { id: string; email?: string | undefined; created_at: string } } | null) => {
       if (!active) return;
-      if (!session) { setUserId(null); setAddresses([]); setFavorites([]); setOrders([]); setReady(true); return; }
+      if (!session) { setUserId(null); setIsStaff(false); setAddresses([]); setFavorites([]); setOrders([]); setReady(true); return; }
       setUserId(session.user.id); setEmail(session.user.email ?? ''); setCreatedAt(session.user.created_at);
       catalogRef = catalogRef ?? await loadCatalog();
       await loadUser(session.user.id, catalogRef);
@@ -101,6 +111,12 @@ function useAccountState() {
     void loadCatalog().then(c => { catalogRef = c; return supabase.auth.getSession(); }).then(({ data }) => apply(data.session));
     return () => { active = false; sub.subscription.unsubscribe(); };
   }, [loadCatalog, loadUser]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const t = setInterval(() => { if (document.visibilityState === 'visible') void loadOrders(userId, catalog); }, 20000);
+    return () => clearInterval(t);
+  }, [userId, catalog, loadOrders]);
 
   const currentUser: Customer | null = userId ? { id: userId, name: profile.name || email.split('@')[0] || 'Cliente', email, phone: profile.phone, createdAt: createdAt || new Date().toISOString(), addresses, favorites, orderCodes: orders.map(o => o.code) } : null;
 
@@ -188,7 +204,7 @@ function useAccountState() {
     return { order };
   };
 
-  return { currentUser, ready, warning, orders, register, login, recover, logout, updateProfile, saveAddress, deleteAddress, defaultAddress, toggleFavorite, placeOrder, attachOrders: (_codes: string[]) => {} };
+  return { currentUser, userId, openByDemo: catalog?.open, isStaff, reloadCatalog: loadCatalog, ready, warning, orders, register, login, recover, logout, updateProfile, saveAddress, deleteAddress, defaultAddress, toggleFavorite, placeOrder, attachOrders: (_codes: string[]) => {} };
 }
 export function AccountProvider({ children }: { children: ReactNode }) { return <AccountContext.Provider value={useAccountState()}>{children}</AccountContext.Provider>; }
 export function useAccount() { const account = useContext(AccountContext); if (!account) throw new Error('AccountProvider required'); return account; }
