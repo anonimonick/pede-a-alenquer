@@ -206,6 +206,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          accepted_at: string | null
           address_id: string | null
           change_for: number | null
           client_request_id: string | null
@@ -223,6 +224,7 @@ export type Database = {
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: Database["public"]["Enums"]["payment_status"]
+          rejection_reason: string | null
           restaurant_id: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -230,6 +232,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
           address_id?: string | null
           change_for?: number | null
           client_request_id?: string | null
@@ -247,6 +250,7 @@ export type Database = {
           notes?: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          rejection_reason?: string | null
           restaurant_id: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -254,6 +258,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
           address_id?: string | null
           change_for?: number | null
           client_request_id?: string | null
@@ -271,6 +276,7 @@ export type Database = {
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          rejection_reason?: string | null
           restaurant_id?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
@@ -574,6 +580,7 @@ export type Database = {
           _restaurant_id: string
         }
         Returns: {
+          accepted_at: string | null
           address_id: string | null
           change_for: number | null
           client_request_id: string | null
@@ -591,6 +598,7 @@ export type Database = {
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: Database["public"]["Enums"]["payment_status"]
+          rejection_reason: string | null
           restaurant_id: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -618,6 +626,7 @@ export type Database = {
           _restaurant_id: string
         }
         Returns: {
+          accepted_at: string | null
           address_id: string | null
           change_for: number | null
           client_request_id: string | null
@@ -635,6 +644,7 @@ export type Database = {
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: Database["public"]["Enums"]["payment_status"]
+          rejection_reason: string | null
           restaurant_id: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -664,6 +674,7 @@ export type Database = {
           _restaurant_id: string
         }
         Returns: {
+          accepted_at: string | null
           address_id: string | null
           change_for: number | null
           client_request_id: string | null
@@ -681,6 +692,42 @@ export type Database = {
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: Database["public"]["Enums"]["payment_status"]
+          rejection_reason: string | null
+          restaurant_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      restaurant_order_action: {
+        Args: { _action: string; _order_id: string; _reason?: string }
+        Returns: {
+          accepted_at: string | null
+          address_id: string | null
+          change_for: number | null
+          client_request_id: string | null
+          code: string
+          courier_id: string | null
+          created_at: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          delivery_address: Json | null
+          delivery_fee: number
+          discount: number
+          fulfillment: Database["public"]["Enums"]["fulfillment_mode"]
+          id: string
+          notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          rejection_reason: string | null
           restaurant_id: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
