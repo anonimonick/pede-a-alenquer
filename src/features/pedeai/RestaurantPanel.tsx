@@ -73,7 +73,7 @@ function OrdersArea({ restaurantId, mode }: { restaurantId: string; mode: 'paine
   }, [load]);
   const act = async (o: Order, action: PanelAction, reason?: string) => {
     setBusy(o.id);
-    const { error: e } = await supabase.rpc('restaurant_order_action', { _order_id: o.id, _action: action, _reason: reason ?? undefined });
+    const { error: e } = await supabase.rpc('restaurant_order_action', { _order_id: o.id, _action: action, ...(reason ? { _reason: reason } : {}) });
     setBusy('');
     if (e) { setError(panelError(e.message)); return false; }
     await load(); return true;
