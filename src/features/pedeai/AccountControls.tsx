@@ -1,6 +1,6 @@
 import { Link,useLocation,useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Heart,User,LogOut,ShoppingBag } from 'lucide-react';
+import { Heart,User,LogOut,ShoppingBag,Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog,DialogContent,DialogTitle,DialogDescription } from '@/components/ui/dialog';
 import { DropdownMenu,DropdownMenuTrigger,DropdownMenuContent,DropdownMenuItem } from '@/components/ui/dropdown-menu';

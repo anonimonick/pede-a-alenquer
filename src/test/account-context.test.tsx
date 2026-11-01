@@ -13,7 +13,7 @@ describe('Supabase account mapping', () => {
   it('explains server rejection of an unmet minimum order', () => {
     expect(friendlyError('Pedido mínimo não atingido')).toBe('O pedido mínimo deste restaurante não foi atingido.');
   });
-  it('labels a newly received order as in preparation', () => {
-    expect(STATUS_LABEL['received']).toBe('Em preparação');
+  it('labels a newly received order as waiting for the restaurant', () => {
+    expect(STATUS_LABEL['received']).toBe('Aguardando restaurante');
   });
 });
