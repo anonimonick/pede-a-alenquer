@@ -15,6 +15,7 @@ import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as MinhaContaRouteImport } from './routes/minha-conta'
+import { Route as PainelRouteImport } from './routes/painel'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
@@ -50,6 +51,11 @@ const EntrarRoute = EntrarRouteImport.update({
 const MinhaContaRoute = MinhaContaRouteImport.update({
   id: '/minha-conta',
   path: '/minha-conta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PainelRoute = PainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/entrar': typeof EntrarRoute
   '/minha-conta': typeof MinhaContaRoute
+  '/painel': typeof PainelRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/entrar': typeof EntrarRoute
   '/minha-conta': typeof MinhaContaRoute
+  '/painel': typeof PainelRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/entrar': typeof EntrarRoute
   '/minha-conta': typeof MinhaContaRoute
+  '/painel': typeof PainelRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/entrar'
     | '/minha-conta'
+    | '/painel'
     | '/privacidade'
     | '/recuperar-senha'
     | '/redefinir-senha'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/entrar'
     | '/minha-conta'
+    | '/painel'
     | '/privacidade'
     | '/recuperar-senha'
     | '/redefinir-senha'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/entrar'
     | '/minha-conta'
+    | '/painel'
     | '/privacidade'
     | '/recuperar-senha'
     | '/redefinir-senha'
@@ -178,6 +190,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   EntrarRoute: typeof EntrarRoute
   MinhaContaRoute: typeof MinhaContaRoute
+  PainelRoute: typeof PainelRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
@@ -228,6 +241,13 @@ declare module '@tanstack/react-router' {
       path: '/minha-conta'
       fullPath: '/minha-conta'
       preLoaderRoute: typeof MinhaContaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/painel': {
+      id: '/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof PainelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacidade': {
@@ -282,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   EntrarRoute: EntrarRoute,
   MinhaContaRoute: MinhaContaRoute,
+  PainelRoute: PainelRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
