@@ -47,3 +47,4 @@
 .panel-opening{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:640px}
 .panel-opening>button,.panel-opening>.panel-note,.panel-opening>p{grid-column:1/-1}
 @media (max-width:767px){.panel-stats{grid-template-columns:repeat(2,1fr)}.panel-opening{grid-template-columns:1fr}.panel-products{grid-template-columns:1fr}}
+.panel-empty h1{font-size:1.6rem;font-weight:800}
