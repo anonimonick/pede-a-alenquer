@@ -7,4 +7,8 @@
 - [x] Login, cadastro, recuperação e nova senha reais.
 - [x] Perfil, endereços, favoritos e histórico de pedidos no banco.
 - [x] Pedido gravado no banco com preços recalculados no servidor.
-- [ ] Exibir cardápios lidos do banco (hoje vêm das fixtures com os mesmos dados).
+- [x] Cardápio do cliente usa preços, disponibilidade e produtos novos do banco.
+# Painel do restaurante
+- [x] Acesso por vínculo restaurant_staff, dashboard, pedidos com transições validadas no banco.
+- [x] Cardápio e categorias editáveis por gerentes; abrir/fechar respeitando suspensão.
+- [ ] Realtime (aguarda aprovação para habilitar publicação).
