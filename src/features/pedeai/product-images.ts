@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export const IMAGE_BUCKET = 'product-images';
-const BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/sign/${IMAGE_BUCKET}/`;
+const BASE = `${import.meta.env['VITE_SUPABASE_URL']}/storage/v1/object/sign/${IMAGE_BUCKET}/`;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
