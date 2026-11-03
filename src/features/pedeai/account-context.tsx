@@ -5,6 +5,7 @@ import { emptyAddress, parseChange, type Address, type Coupon, type DemoOrder, t
 import type { CartItem } from './cart-rules';
 import { PRODUCTS, RESTAURANTS } from './data';
 import { applyDbMenu } from './menu-sync';
+import { resolveImages } from './product-images';
 
 type Catalog = { restaurants: Map<number, string>; restaurantDemo: Map<string, number>; products: Map<number, string>; productDemo: Map<string, number>; open: Map<number, boolean> };
 const PAYMENT = { Pix: 'pix', 'Cartão de Crédito': 'credit_card', 'Cartão de Débito': 'debit_card', Dinheiro: 'cash' } as const;
@@ -59,7 +60,7 @@ function useAccountState() {
     const c: Catalog = { restaurants: new Map(), restaurantDemo: new Map(), products: new Map(), productDemo: new Map(), open: new Map() };
     for (const x of r.data) if (x.demo_id != null) { c.restaurants.set(x.demo_id, x.id); c.restaurantDemo.set(x.id, x.demo_id); c.open.set(x.demo_id, x.is_open && x.is_active); }
     for (const x of p.data) if (x.demo_id != null) { c.products.set(x.demo_id, x.id); c.productDemo.set(x.id, x.demo_id); }
-    applyDbMenu(p.data.filter(x => x.is_available).map(x => ({ demo_id: x.demo_id, restaurant_demo: c.restaurantDemo.get(x.restaurant_id) ?? null, name: x.name, description: x.description, price: x.price, image_url: x.image_url, is_popular: x.is_popular, category: (x.categories as { name: string } | null)?.name ?? null })));
+    applyDbMenu((await resolveImages(p.data.filter(x => x.is_available))).map(x => ({ demo_id: x.demo_id, restaurant_demo: c.restaurantDemo.get(x.restaurant_id) ?? null, name: x.name, description: x.description, price: x.price, image_url: x.image_url, is_popular: x.is_popular, category: (x.categories as { name: string } | null)?.name ?? null })));
     setCatalog(c); return c;
   }, []);
 
