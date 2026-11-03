@@ -48,3 +48,6 @@
 .panel-opening>button,.panel-opening>.panel-note,.panel-opening>p{grid-column:1/-1}
 @media (max-width:767px){.panel-stats{grid-template-columns:repeat(2,1fr)}.panel-opening{grid-template-columns:1fr}.panel-products{grid-template-columns:1fr}}
 .panel-empty h1{font-size:1.6rem;font-weight:800}
+.panel-photo-preview { width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; }
+.panel-photo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.panel-photo-actions label { cursor: pointer; min-height: 44px; }

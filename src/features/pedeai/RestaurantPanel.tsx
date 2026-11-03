@@ -8,6 +8,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { useAccount, friendlyError } from './account-context';
 import { money } from './checkout-rules';
 import { allowedActions, countStages, panelStage, parsePrice, STAGE_LABEL, validImageUrl, validReason, type PanelAction } from './panel-rules';
+import { imageFileError, removeProductImage, resolveImages, storagePath, uploadProductImage } from './product-images';
 import './panel.css';
 
 export const PANEL_TABS = ['painel', 'pedidos', 'cardapio', 'funcionamento'] as const;
@@ -119,10 +120,11 @@ function RejectDialog({ order, onClose, onConfirm }: { order: Order | null; onCl
     <div className="confirmation-actions"><Button variant="outline" onClick={onClose}>Voltar</Button><Button className="pa-primary" onClick={() => validReason(reason) ? onConfirm(reason.trim()) : setErr('Informe um motivo de 3 a 300 caracteres.')}>Recusar pedido</Button></div></DialogContent></Dialog>;
 }
 
-type Draft = { id?: string; name: string; description: string; price: string; image_url: string; category_id: string; is_available: boolean };
+type Draft = { id?: string; name: string; description: string; price: string; image_url: string; preview?: string; category_id: string; is_available: boolean };
 function MenuArea({ restaurantId }: { restaurantId: string }) {
   const { reloadCatalog } = useAccount();
   const [products, setProducts] = useState<Product[]>([]);
+  const [shown, setShown] = useState<Map<string, string | null>>(new Map());
   const [cats, setCats] = useState<Category[]>([]);
   const [editing, setEditing] = useState<Draft | null>(null);
   const [error, setError] = useState('');
@@ -132,6 +134,7 @@ function MenuArea({ restaurantId }: { restaurantId: string }) {
     const [p, c] = await Promise.all([supabase.from('products').select('*').eq('restaurant_id', restaurantId).order('sort_order').order('name'), supabase.from('categories').select('*').eq('restaurant_id', restaurantId).order('sort_order')]);
     if (p.error || c.error) { setError(panelError((p.error ?? c.error)?.message)); return; }
     setProducts(p.data); setCats(c.data);
+    const r = await resolveImages(p.data); setShown(new Map(r.map(x => [x.id, x.image_url])));
   }, [restaurantId]);
   useEffect(() => { void load(); }, [load]);
   const done = async (msg: string) => { setNotice(msg); setError(''); await load(); void reloadCatalog(); };
@@ -143,7 +146,7 @@ function MenuArea({ restaurantId }: { restaurantId: string }) {
   return <section>
     <div role="status" className="panel-notice">{notice}</div>{error && <p role="alert" className="field-error">{error}</p>}
     <div className="panel-list-head"><h2>Produtos ({products.length})</h2><Button className="pa-primary" onClick={() => setEditing({ name: '', description: '', price: '', image_url: '', category_id: cats[0]?.id ?? '', is_available: true })}><Plus size={18} />Novo produto</Button></div>
-    <div className="panel-products">{products.map(p => <article key={p.id} className={`panel-product ${p.is_available ? '' : 'is-off'}`}>{p.image_url ? <img src={p.image_url} alt="" /> : <div className="panel-noimg" aria-hidden>🍽️</div>}<div><h3>{p.name}</h3><p>{p.category_id ? catName.get(p.category_id) : 'Sem categoria'} · <strong>{money(cents(p.price))}</strong></p><p className="panel-muted">{p.is_available ? 'Disponível' : 'Indisponível'}</p></div><div className="panel-product-actions"><Button variant="outline" size="sm" onClick={() => setEditing({ id: p.id, name: p.name, description: p.description ?? '', price: Number(p.price).toFixed(2).replace('.', ','), image_url: p.image_url ?? '', category_id: p.category_id ?? '', is_available: p.is_available })}><Pencil size={15} />Editar</Button><Button variant="ghost" size="sm" onClick={() => void toggle(p)}>{p.is_available ? 'Desativar' : 'Ativar'}</Button></div></article>)}</div>
+    <div className="panel-products">{products.map(p => <article key={p.id} className={`panel-product ${p.is_available ? '' : 'is-off'}`}>{shown.get(p.id) ? <img src={shown.get(p.id)!} alt="" /> : <div className="panel-noimg" aria-hidden>🍽️</div>}<div><h3>{p.name}</h3><p>{p.category_id ? catName.get(p.category_id) : 'Sem categoria'} · <strong>{money(cents(p.price))}</strong></p><p className="panel-muted">{p.is_available ? 'Disponível' : 'Indisponível'}</p></div><div className="panel-product-actions"><Button variant="outline" size="sm" onClick={() => setEditing({ id: p.id, name: p.name, description: p.description ?? '', price: Number(p.price).toFixed(2).replace('.', ','), image_url: p.image_url ?? '', preview: shown.get(p.id) ?? undefined, category_id: p.category_id ?? '', is_available: p.is_available })}><Pencil size={15} />Editar</Button><Button variant="ghost" size="sm" onClick={() => void toggle(p)}>{p.is_available ? 'Desativar' : 'Ativar'}</Button></div></article>)}</div>
     <h2>Categorias</h2>
     <ul className="panel-cats">{cats.map((c, i) => <li key={c.id}><span>{c.name}</span><Button variant="ghost" size="icon" aria-label={`Subir ${c.name}`} disabled={i === 0} onClick={() => void moveCat(i, -1)}><ArrowUp size={16} /></Button><Button variant="ghost" size="icon" aria-label={`Descer ${c.name}`} disabled={i === cats.length - 1} onClick={() => void moveCat(i, 1)}><ArrowDown size={16} /></Button><Button variant="ghost" size="sm" onClick={() => void renameCat(c)}>Renomear</Button></li>)}</ul>
     <div className="panel-addcat"><input aria-label="Nova categoria" placeholder="Nova categoria" value={newCat} maxLength={80} onChange={e => setNewCat(e.target.value)} /><Button variant="outline" onClick={() => void addCat()}>Adicionar categoria</Button></div>
@@ -155,27 +158,39 @@ function ProductDialog({ draft, cats, restaurantId, onClose, onSaved }: { draft:
   const [d, setD] = useState<Draft | null>(draft);
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  useEffect(() => { setD(draft); setErrs({}); }, [draft]);
+  const [file, setFile] = useState<File | null>(null);
+  const [local, setLocal] = useState('');
+  useEffect(() => { setD(draft); setErrs({}); setFile(null); setLocal(''); }, [draft]);
+  useEffect(() => () => { if (local) URL.revokeObjectURL(local); }, [local]);
   if (!d) return <Dialog open={false} />;
   const save = async () => {
     const e: Record<string, string> = {}; const price = parsePrice(d.price);
     if (d.name.trim().length < 2 || d.name.length > 150) e['name'] = 'Informe um nome de 2 a 150 caracteres.';
     if (d.description.length > 1000) e['description'] = 'Descrição muito longa.';
     if (price === null) e['price'] = 'Preço entre R$ 0,01 e R$ 5.000,00, ex.: 12,90.';
-    if (!validImageUrl(d.image_url.trim())) e['image_url'] = 'Use um endereço de imagem começando com https://';
+    if (!file && !validImageUrl(d.image_url.trim())) e['image_url'] = 'Imagem inválida.';
     setErrs(e); if (Object.keys(e).length || price === null) return;
     setSaving(true);
-    const row = { name: d.name.trim(), description: d.description.trim() || null, price: price / 100, image_url: d.image_url.trim() || null, category_id: d.category_id || null, is_available: d.is_available };
+    let image = d.image_url.trim() || null;
+    if (file) { try { image = await uploadProductImage(restaurantId, file); } catch (er) { setSaving(false); setErrs({ image_url: 'Não foi possível enviar a foto. ' + panelError((er as Error).message) }); return; } }
+    const old = draft?.image_url;
+    const row = { name: d.name.trim(), description: d.description.trim() || null, price: price / 100, image_url: image, category_id: d.category_id || null, is_available: d.is_available };
     const { error } = d.id ? await supabase.from('products').update(row).eq('id', d.id) : await supabase.from('products').insert({ ...row, restaurant_id: restaurantId });
     setSaving(false);
-    if (error) setErrs({ form: panelError(error.message) }); else onSaved(d.id ? 'Produto atualizado.' : 'Produto criado.');
+    if (error) { if (file) void removeProductImage(image); setErrs({ form: panelError(error.message) }); return; }
+    if (old && old !== image && storagePath(old)) void removeProductImage(old);
+    onSaved(d.id ? 'Produto atualizado.' : 'Produto criado.');
   };
   const f = (k: keyof Draft) => (ev: { target: { value: string } }) => setD({ ...d, [k]: ev.target.value });
   return <Dialog open onOpenChange={o => { if (!o) onClose(); }}><DialogContent className="pa-modal account-modal panel-dialog"><DialogTitle>{d.id ? 'Editar produto' : 'Novo produto'}</DialogTitle><DialogDescription>O preço salvo aqui é o usado pelo servidor ao calcular o pedido.</DialogDescription>
     <label className="panel-field">Nome<input value={d.name} onChange={f('name')} maxLength={150} />{errs['name'] && <span className="field-error">{errs['name']}</span>}</label>
     <label className="panel-field">Descrição<textarea value={d.description} onChange={f('description')} maxLength={1000} />{errs['description'] && <span className="field-error">{errs['description']}</span>}</label>
     <label className="panel-field">Preço (R$)<input inputMode="decimal" value={d.price} onChange={f('price')} placeholder="12,90" />{errs['price'] && <span className="field-error">{errs['price']}</span>}</label>
-    <label className="panel-field">Imagem (endereço https)<input value={d.image_url} onChange={f('image_url')} placeholder="https://…" />{errs['image_url'] && <span className="field-error">{errs['image_url']}</span>}</label>
+    <div className="panel-field">Foto do produto
+      {(local || (d.image_url && d.preview) || (d.image_url && !storagePath(d.image_url) && d.image_url)) ? <img className="panel-photo-preview" src={local || d.preview || d.image_url} alt="Prévia da foto" /> : <div className="panel-noimg" aria-hidden>🍽️</div>}
+      <div className="panel-photo-actions"><Button asChild variant="outline"><label>{d.image_url || file ? 'Trocar foto' : 'Enviar foto'}<input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={ev => { const x = ev.target.files?.[0]; ev.target.value = ''; if (!x) return; const er = imageFileError(x); if (er) { setErrs({ ...errs, image_url: er }); return; } setErrs({ ...errs, image_url: '' }); setFile(x); setLocal(URL.createObjectURL(x)); }} /></label></Button>
+        {(d.image_url || file) && <Button variant="ghost" onClick={() => { setFile(null); setLocal(''); setD({ ...d, image_url: '', preview: undefined }); }}>Remover foto</Button>}</div>
+      <span className="panel-muted">JPG, PNG ou WEBP, até 5 MB.</span>{errs['image_url'] && <span className="field-error">{errs['image_url']}</span>}</div>
     <label className="panel-field">Categoria<select value={d.category_id} onChange={f('category_id')}><option value="">Sem categoria</option>{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
     <label className="panel-check"><input type="checkbox" checked={d.is_available} onChange={e => setD({ ...d, is_available: e.target.checked })} />Disponível para pedidos</label>
     {errs['form'] && <p role="alert" className="field-error">{errs['form']}</p>}
