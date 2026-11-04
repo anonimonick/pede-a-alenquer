@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity: string
+          entity_id: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity: string
+          entity_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity?: string
+          entity_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -314,6 +344,33 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          created_at: string
+          key: string
+          label: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          label: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          label?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string | null
@@ -449,6 +506,7 @@ export type Database = {
       restaurants: {
         Row: {
           address: string | null
+          approved_at: string | null
           cover_url: string | null
           created_at: string
           cuisine: string | null
@@ -469,10 +527,13 @@ export type Database = {
           rating: number | null
           review_count: number
           slug: string
+          suspended_at: string | null
+          suspension_reason: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          approved_at?: string | null
           cover_url?: string | null
           created_at?: string
           cuisine?: string | null
@@ -493,10 +554,13 @@ export type Database = {
           rating?: number | null
           review_count?: number
           slug: string
+          suspended_at?: string | null
+          suspension_reason?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          approved_at?: string | null
           cover_url?: string | null
           created_at?: string
           cuisine?: string | null
@@ -517,6 +581,8 @@ export type Database = {
           rating?: number | null
           review_count?: number
           slug?: string
+          suspended_at?: string | null
+          suspension_reason?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -547,6 +613,107 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_dashboard: { Args: never; Returns: Json }
+      admin_link_staff: {
+        Args: {
+          _email: string
+          _restaurant_id: string
+          _role: Database["public"]["Enums"]["staff_role"]
+        }
+        Returns: string
+      }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          roles: Database["public"]["Enums"]["app_role"][]
+          staff: Json
+        }[]
+      }
+      admin_order_action: {
+        Args: { _action: string; _order_id: string; _reason?: string }
+        Returns: {
+          accepted_at: string | null
+          address_id: string | null
+          change_for: number | null
+          client_request_id: string | null
+          code: string
+          courier_id: string | null
+          created_at: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          delivery_address: Json | null
+          delivery_fee: number
+          discount: number
+          fulfillment: Database["public"]["Enums"]["fulfillment_mode"]
+          id: string
+          notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          rejection_reason: string | null
+          restaurant_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_restaurant_status: {
+        Args: { _action: string; _reason?: string; _restaurant_id: string }
+        Returns: {
+          address: string | null
+          approved_at: string | null
+          cover_url: string | null
+          created_at: string
+          cuisine: string | null
+          delivery_fee: number
+          delivery_time: string | null
+          demo_id: number | null
+          description: string | null
+          home_filter: string | null
+          hours_label: string | null
+          id: string
+          is_active: boolean
+          is_open: boolean
+          logo_url: string | null
+          minimum_order: number
+          name: string
+          opening_hours: Json
+          phone: string | null
+          rating: number | null
+          review_count: number
+          slug: string
+          suspended_at: string | null
+          suspension_reason: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "restaurants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_set_user_role: {
+        Args: {
+          _grant: boolean
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      admin_unlink_staff: { Args: { _link_id: string }; Returns: undefined }
       assign_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -706,6 +873,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      require_admin: { Args: never; Returns: undefined }
       restaurant_order_action: {
         Args: { _action: string; _order_id: string; _reason?: string }
         Returns: {
