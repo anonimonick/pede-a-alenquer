@@ -72,7 +72,7 @@ function Restaurants() {
   }, []);
   useEffect(() => { void load(); }, [load]);
   const staffOf = (rid: string) => users.flatMap(u => u.staff.filter(s => s.restaurant_id === rid).map(s => ({ ...s, user: u })));
-  const status = async (r: Restaurant, action: string, why?: string) => { const { error } = await supabase.rpc('admin_restaurant_status', { _restaurant_id: r.id, _action: action, _reason: why ?? undefined }); setMsg(error ? adminError(error.message) : `${r.name}: ${ACT[action]?.toLowerCase()} concluído.`); if (!error) { setSuspend(null); setReason(''); } await load(); };
+  const status = async (r: Restaurant, action: string, why?: string) => { const { error } = await supabase.rpc('admin_restaurant_status', { _restaurant_id: r.id, _action: action, ...(why ? { _reason: why } : {}) }); setMsg(error ? adminError(error.message) : `${r.name}: ${ACT[action]?.toLowerCase()} concluído.`); if (!error) { setSuspend(null); setReason(''); } await load(); };
   const link = async (rid: string) => { const { error } = await supabase.rpc('admin_link_staff', { _restaurant_id: rid, _email: linkEmail[rid] ?? '', _role: (linkRole[rid] ?? 'owner') as Database['public']['Enums']['staff_role'] }); setMsg(error ? adminError(error.message) : 'Responsável vinculado.'); if (!error) setLinkEmail(e => ({ ...e, [rid]: '' })); await load(); };
   const unlink = async (id: string) => { const { error } = await supabase.rpc('admin_unlink_staff', { _link_id: id }); setMsg(error ? adminError(error.message) : 'Vínculo removido.'); await load(); };
   return <>
@@ -143,7 +143,7 @@ function OrdersArea() {
   }, []);
   useEffect(() => { void load(); const t = setInterval(() => document.visibilityState === 'visible' && void load(), 15000); return () => clearInterval(t); }, [load]);
   const shown = useMemo(() => orders.filter(o => matchesOrder(o, f)), [orders, f]);
-  const act = async (o: Order, action: 'advance' | 'cancel', why?: string) => { const { error } = await supabase.rpc('admin_order_action', { _order_id: o.id, _action: action, _reason: why ?? undefined }); setMsg(error ? adminError(error.message) : `Pedido ${o.code} atualizado.`); if (!error) { setCancel(null); setReason(''); } await load(); };
+  const act = async (o: Order, action: 'advance' | 'cancel', why?: string) => { const { error } = await supabase.rpc('admin_order_action', { _order_id: o.id, _action: action, ...(why ? { _reason: why } : {}) }); setMsg(error ? adminError(error.message) : `Pedido ${o.code} atualizado.`); if (!error) { setCancel(null); setReason(''); } await load(); };
   const set = (k: keyof OrderFilter) => (e: { target: { value: string } }) => setF(x => ({ ...x, [k]: e.target.value }));
   return <>
     <div className="panel-stats">
