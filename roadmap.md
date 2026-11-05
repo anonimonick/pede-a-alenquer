@@ -12,3 +12,6 @@
 - [x] Acesso por vínculo restaurant_staff, dashboard, pedidos com transições validadas no banco.
 - [x] Cardápio e categorias editáveis por gerentes; abrir/fechar respeitando suspensão.
 - [ ] Realtime (aguarda aprovação para habilitar publicação).
+# Painel administrativo
+- [x] /admin com dashboard, restaurantes (aprovar/suspender/reativar/editar/vínculos), usuários, pedidos com filtros, configurações e histórico.
+- [ ] Definir modelo comercial (comissões) antes de qualquer cálculo de receita.
