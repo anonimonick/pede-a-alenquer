@@ -51,3 +51,4 @@
 .panel-photo-preview { width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; }
 .panel-photo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .panel-photo-actions label { cursor: pointer; min-height: 44px; }
+.panel-order header.admin-row{display:flex;justify-content:flex-start;align-items:center;gap:8px;flex-wrap:wrap}

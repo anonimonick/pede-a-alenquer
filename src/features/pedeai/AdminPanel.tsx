@@ -79,7 +79,7 @@ function Restaurants() {
     <div className="panel-list-head"><h2>Restaurantes ({list.length})</h2><div className="panel-actions"><Button variant="outline" onClick={() => void load()}><RefreshCw size={16} />Atualizar</Button><Button className="pa-primary" onClick={() => setEdit('new')}>Novo restaurante</Button></div></div>
     {msg && <p className="panel-notice" role="status">{msg}</p>}
     <div className="panel-orders">{list.map(r => { const st = restaurantState(r); return <article className="panel-order" key={r.id} data-testid={`admin-restaurant-${r.slug}`}>
-      <header><strong>{r.name}</strong> <span className={`panel-badge ${st === 'active' ? 'is-open' : ''}`}>{STATE[st]}</span>{st === 'active' && <span className="panel-muted"> · {r.is_open ? 'Aberto agora' : 'Fechado agora'}</span>}</header>
+      <header className="admin-row"><strong>{r.name}</strong> <span className={`panel-badge ${st === 'active' ? 'is-open' : ''}`}>{STATE[st]}</span>{st === 'active' && <span className="panel-muted"> · {r.is_open ? 'Aberto agora' : 'Fechado agora'}</span>}</header>
       <p className="panel-muted">/{r.slug} · Taxa {money(cents(r.delivery_fee))} · Mínimo {money(cents(r.minimum_order))}{r.suspension_reason ? ` · Motivo da suspensão: ${r.suspension_reason}` : ''}</p>
       <div className="panel-actions">{RESTAURANT_ACTIONS[st].map(a => <Button key={a} variant={a === 'suspend' ? 'outline' : 'default'} className={a === 'suspend' ? '' : 'pa-primary'} onClick={() => a === 'suspend' ? setSuspend(r) : void status(r, a)}>{ACT[a]}</Button>)}<Button variant="outline" onClick={() => setEdit(r)}>Editar dados</Button></div>
       <h3 className="panel-muted">Responsáveis</h3>
@@ -127,7 +127,7 @@ function UsersArea({ actorId }: { actorId: string }) {
     <label className="panel-field">Buscar<input value={q} onChange={e => setQ(e.target.value)} placeholder="Nome, e-mail ou telefone" /></label>
     {msg && <p className="panel-notice" role="status">{msg}</p>}
     <p className="panel-muted">O papel de administrador só é concedido pelo procedimento do servidor. Vínculos com restaurantes são feitos na aba Restaurantes.</p>
-    <div className="panel-orders">{shown.map(u => <article className="panel-order" key={u.id}><header><strong>{u.full_name || '(sem nome)'}</strong> <span className="panel-muted">{u.email}{u.phone ? ` · ${u.phone}` : ''}</span></header>
+    <div className="panel-orders">{shown.map(u => <article className="panel-order" key={u.id}><header className="admin-row"><strong>{u.full_name || '(sem nome)'}</strong> <span className="panel-muted">{u.email}{u.phone ? ` · ${u.phone}` : ''}</span></header>
       <p>{u.roles.map(r => <span className="panel-badge" key={r}>{ROLE[r]}</span>)} {u.staff.map(s => <span className="panel-badge" key={s.id}>{STAFF[s.role]} · {s.restaurant}</span>)}</p>
       <p className="panel-muted">Cadastro em {fmtDate(u.created_at)}</p>
       <div className="panel-actions">{(['courier', 'restaurant_owner'] as AppRole[]).filter(r => canToggleRole(actorId, u, r)).map(r => <Button key={r} size="sm" variant="outline" onClick={() => void toggle(u, r)}>{u.roles.includes(r) ? `Remover ${ROLE[r]}` : `Tornar ${ROLE[r]}`}</Button>)}</div>
@@ -157,7 +157,7 @@ function OrdersArea() {
     </div>
     <div className="panel-list-head"><h2>{shown.length} pedido(s)</h2><Button variant="outline" onClick={() => { setF(emptyOrderFilter); void load(); }}>Limpar filtros</Button></div>
     {msg && <p className="panel-notice" role="status">{msg}</p>}
-    <div className="panel-orders">{shown.map(o => <article className="panel-order" key={o.id}><header><strong>#{o.code}</strong> <span className="panel-badge">{orderStatusLabel(o.status, o.accepted_at)}</span> <span className="panel-badge">Pagamento: {PAY[o.payment_status]}</span></header>
+    <div className="panel-orders">{shown.map(o => <article className="panel-order" key={o.id}><header className="admin-row"><strong>#{o.code}</strong> <span className="panel-badge">{orderStatusLabel(o.status, o.accepted_at)}</span> <span className="panel-badge">Pagamento: {PAY[o.payment_status]}</span></header>
       <p>{rests.find(r => r.id === o.restaurant_id)?.name} · {o.customer_name} · {o.customer_phone} · {fmtDate(o.created_at)}</p>
       <p className="panel-muted">Total {money(cents(o.total))} ({o.fulfillment === 'delivery' ? 'entrega' : 'retirada'}){o.rejection_reason ? ` · ${o.rejection_reason}` : ''}</p>
       {o.status !== 'delivered' && o.status !== 'cancelled' && <div className="panel-actions"><Button size="sm" className="pa-primary" onClick={() => void act(o, 'advance')}>{o.status === 'received' && !o.accepted_at ? 'Aceitar' : 'Avançar status'}</Button><Button size="sm" variant="outline" onClick={() => setCancel(o)}>Cancelar pedido</Button></div>}
@@ -176,7 +176,7 @@ function SettingsArea() {
   return <>
     <p className="panel-note">Área preparada para os parâmetros da plataforma. Nenhum cálculo financeiro usa estes valores ainda: comissões e taxas serão aplicadas quando o modelo comercial do Pede Aí for definido.</p>
     {msg && <p className="panel-notice" role="status">{msg}</p>}
-    <div className="panel-orders">{rows.map(r => <article className="panel-order" key={r.key}><header><strong>{r.label}</strong> <span className="panel-muted">atualizado em {fmtDate(r.updated_at)}</span></header>
+    <div className="panel-orders">{rows.map(r => <article className="panel-order" key={r.key}><header className="admin-row"><strong>{r.label}</strong> <span className="panel-muted">atualizado em {fmtDate(r.updated_at)}</span></header>
       <label className="panel-field">Parâmetros<textarea rows={5} value={drafts[r.key] ?? ''} onChange={e => setDrafts(d => ({ ...d, [r.key]: e.target.value }))} style={{ fontFamily: 'monospace' }} /></label>
       <div className="panel-actions"><Button variant="outline" onClick={() => void save(r.key)}>Salvar</Button></div></article>)}</div>
   </>;
@@ -186,5 +186,5 @@ function AuditArea() {
   const [rows, setRows] = useState<{ id: string; entity: string; entity_id: string | null; action: string; details: Json; created_at: string; actor_id: string | null }[]>([]);
   useEffect(() => { void supabase.from('admin_audit_log').select('*').order('created_at', { ascending: false }).limit(200).then(({ data }) => setRows(data ?? [])); }, []);
   const ENT: Record<string, string> = { order: 'Pedido', restaurant: 'Restaurante', restaurant_staff: 'Vínculo', user_role: 'Papel' };
-  return <div className="panel-orders">{rows.map(r => <article className="panel-order" key={r.id}><header><strong>{ENT[r.entity] ?? r.entity}</strong> <span className="panel-badge">{r.action}</span> <span className="panel-muted">{fmtDate(r.created_at)}</span></header><p className="panel-muted" style={{ wordBreak: 'break-word' }}>{JSON.stringify(r.details)}</p></article>)}{!rows.length && <p className="panel-muted">Nenhuma alteração registrada ainda.</p>}</div>;
+  return <div className="panel-orders">{rows.map(r => <article className="panel-order" key={r.id}><header className="admin-row"><strong>{ENT[r.entity] ?? r.entity}</strong> <span className="panel-badge">{r.action}</span> <span className="panel-muted">{fmtDate(r.created_at)}</span></header><p className="panel-muted" style={{ wordBreak: 'break-word' }}>{JSON.stringify(r.details)}</p></article>)}{!rows.length && <p className="panel-muted">Nenhuma alteração registrada ainda.</p>}</div>;
 }
