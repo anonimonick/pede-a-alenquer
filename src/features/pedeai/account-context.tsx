@@ -50,6 +50,7 @@ function useAccountState() {
   const [ready, setReady] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
   const [warning, setWarning] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const loadCatalog = useCallback(async () => {
     const [r, p] = await Promise.all([
@@ -87,6 +88,8 @@ function useAccountState() {
       supabase.from('customer_favorites').select('restaurant_id').eq('user_id', uid),
       supabase.from('restaurant_staff').select('id').eq('user_id', uid).limit(1),
     ]);
+    const adm = await supabase.rpc('has_role', { _user_id: uid, _role: 'admin' });
+    setIsAdmin(adm.data === true);
     setIsStaff(Boolean(st.data?.length));
     if (p.error || a.error || f.error) setWarning(true);
     setProfile({ name: p.data?.full_name ?? '', phone: p.data?.phone ?? '' });
@@ -99,7 +102,7 @@ function useAccountState() {
     let active = true; let catalogRef: Catalog | null = null;
     const apply = async (session: { user: { id: string; email?: string | undefined; created_at: string } } | null) => {
       if (!active) return;
-      if (!session) { setUserId(null); setIsStaff(false); setAddresses([]); setFavorites([]); setOrders([]); setReady(true); return; }
+      if (!session) { setUserId(null); setIsStaff(false); setIsAdmin(false); setAddresses([]); setFavorites([]); setOrders([]); setReady(true); return; }
       setUserId(session.user.id); setEmail(session.user.email ?? ''); setCreatedAt(session.user.created_at);
       catalogRef = catalogRef ?? await loadCatalog();
       await loadUser(session.user.id, catalogRef);
@@ -205,7 +208,7 @@ function useAccountState() {
     return { order };
   };
 
-  return { currentUser, userId, openByDemo: catalog?.open, isStaff, reloadCatalog: loadCatalog, ready, warning, orders, register, login, recover, logout, updateProfile, saveAddress, deleteAddress, defaultAddress, toggleFavorite, placeOrder, attachOrders: (_codes: string[]) => {} };
+  return { currentUser, userId, openByDemo: catalog?.open, isStaff, isAdmin, reloadCatalog: loadCatalog, ready, warning, orders, register, login, recover, logout, updateProfile, saveAddress, deleteAddress, defaultAddress, toggleFavorite, placeOrder, attachOrders: (_codes: string[]) => {} };
 }
 export function AccountProvider({ children }: { children: ReactNode }) { return <AccountContext.Provider value={useAccountState()}>{children}</AccountContext.Provider>; }
 export function useAccount() { const account = useContext(AccountContext); if (!account) throw new Error('AccountProvider required'); return account; }
